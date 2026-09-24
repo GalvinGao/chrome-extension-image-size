@@ -63,7 +63,7 @@
         mimeLine.append(mimePrefix, subtype, encoding);
         details.append(mimeLine);
         const rows = {};
-        for (const [key, caption] of [['resource', 'Resource'], ['transfer', 'Transferred'], ['dimensions', 'Intrinsic → displayed'], ['delivery', 'Source'], ['duration', 'Load / TTFB'], ['density', 'Bytes / megapixel'], ['srcset', 'srcset']]) {
+        for (const [key, caption] of [['resource', 'Resource'], ['transfer', 'Transferred'], ['intrinsic', 'Intrinsic'], ['displayed', 'Displayed'], ['delivery', 'Source'], ['duration', 'Load / TTFB'], ['density', 'Bytes / megapixel'], ['srcset', 'srcset']]) {
           const row = document.createElement('span');
           row.className = 'row';
           const name = document.createElement('span');
@@ -141,7 +141,8 @@
         const rect = img.getBoundingClientRect();
         const panelWidth = entry.host.getBoundingClientRect().width;
         entry.host.style.setProperty('margin-left', `${Math.max(0, panelWidth + 6 - rect.right) - 2}px`, 'important');
-        entry.rows.dimensions.value.textContent = `${img.naturalWidth}×${img.naturalHeight} → ${Math.round(rect.width)}×${Math.round(rect.height)}`;
+        entry.rows.intrinsic.value.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
+        entry.rows.displayed.value.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}`;
       }
       entry.host.setAttribute('aria-label', `Image file size ${entry.size.textContent}${heavy ? ', high bytes per megapixel' : ''}. Focus for details.`);
       const visible = img.naturalWidth > 0;

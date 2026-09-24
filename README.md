@@ -40,7 +40,8 @@ Hover or keyboard-focus the label for:
 
 - Transferred bytes for the latest request, including headers. Cache checks may transfer only a few hundred bytes, and cache hits may transfer 0 B.
 - Resource bytes after HTTP decompression (image-format compression remains intact).
-- Intrinsic → displayed dimensions (browser-reported natural dimensions → rendered CSS pixels).
+- Intrinsic dimensions (browser-reported natural dimensions).
+- Displayed dimensions (rendered CSS pixels), on a separate row.
 - Source: network, memory cache, disk cache, revalidated cache, prefetch cache, or service worker, when reported by Chrome.
 - Load duration / TTFB in milliseconds for the final request after redirects. TTFB is unavailable when Chrome does not expose first-byte timing, including cached responses.
 - Resource bytes per megapixel of intrinsic dimensions.
