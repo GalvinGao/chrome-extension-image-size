@@ -30,3 +30,8 @@ footer { margin-top: 18px; padding-top: 12px; border-top: 1px solid #e6e7ea; fon
   input:checked { background: #269c69; }
 }
 @media (prefers-reduced-motion: reduce) { input::before { transition: none; } }
+
+.size-control { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 16px; font-size: 12px; }
+select { font: inherit; padding: 5px 8px; border: 1px solid #8886; border-radius: 6px; background: transparent; color: inherit; }
+select:focus-visible { outline: 3px solid #579dff; outline-offset: 2px; }
+select:disabled { opacity: .5; }

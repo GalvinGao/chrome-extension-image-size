@@ -92,10 +92,10 @@ try {
       img.src = 'http://127.0.0.2:${port}/image-' + suffix; document.body.append(img);
     }
   })()`);
-  await until(async () => await evaluate(pageSession, `document.querySelectorAll('[data-image-file-size]').length === 4 && [...document.querySelectorAll('[data-image-file-size]')].every(el => /^\\d/.test(el.title))`), 'All cross-origin sizes appear');
+  await until(async () => await evaluate(pageSession, `document.querySelectorAll('[data-image-file-size]').length === 4 && [...document.querySelectorAll('[data-image-file-size]')].every(el => /^Resource: \\d/.test(el.title))`), 'All cross-origin sizes appear');
   const values = await evaluate(pageSession, `[...document.images].map(img => ({id:img.id, title:img.nextSibling.title, top:img.getBoundingClientRect().top, labelTop:img.nextSibling.getBoundingClientRect().top}))`);
   for (const value of values) {
-    assert.equal(value.title, `${value.id === 'png' ? png.length : Buffer.byteLength(svg)} bytes`);
+    assert.equal(value.title, `Resource: ${value.id === 'png' ? png.length : Buffer.byteLength(svg)} bytes`);
     assert.ok(Math.abs(value.labelTop - value.top - 2) < 1, JSON.stringify(value));
   }
   for (const suffix of ['plain', 'gzip', 'chunked', 'png']) assert.equal(counts.get('/image-' + suffix), 1, 'No duplicate image request');

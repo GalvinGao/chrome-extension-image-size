@@ -6,6 +6,7 @@
   const prefix = `--ifs-${Math.random().toString(36).slice(2)}-`;
   let sequence = 0;
   let enabled = false;
+  let mode = 'resource';
   let receivedState = false;
   let frame = 0;
   const observer = new MutationObserver(schedule);
@@ -63,14 +64,17 @@
       if (img.nextSibling !== entry.host) img.after(entry.host);
       const url = img.currentSrc || img.src;
       const result = sizes.get(canonical(url));
-      entry.size.textContent = result?.bytes != null ? format(result.bytes) : '—';
+      const bytes = mode === 'network' ? result?.networkBytes : result?.bytes;
+      entry.size.textContent = bytes != null ? format(bytes) : '—';
       const mime = result?.mimeType || '';
       const slash = mime.indexOf('/');
       entry.prefix.textContent = slash >= 0 ? mime.slice(0, slash + 1) : '';
       entry.subtype.textContent = slash >= 0 ? mime.slice(slash + 1) : mime;
       entry.encoding.textContent = result?.contentEncoding ? `${mime ? ' + ' : ''}${result.contentEncoding}` : '';
       entry.details.style.display = mime || result?.contentEncoding ? 'block' : 'none';
-      entry.host.title = result?.bytes != null ? `${result.bytes.toLocaleString()} bytes` : result?.reason || 'Not captured. Reload with monitoring enabled to capture image requests.';
+      entry.host.title = bytes != null ?
+        `${mode === 'network' ? 'Network transfer' : 'Resource'}: ${bytes.toLocaleString()} bytes${mode === 'network' && result.delivery ? ` (${result.delivery})` : ''}` :
+        mode === 'network' && result ? 'Network transfer size unavailable' : result?.reason || 'Not captured. Reload with monitoring enabled to capture image requests.';
       entry.host.style.setProperty('display', img.naturalWidth ? 'block' : 'none', 'important');
     }
     observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'srcset', 'sizes'] });
@@ -91,7 +95,8 @@
   }
 
   chrome.runtime.onMessage.addListener(message => {
-    if (message.type === 'state') { receivedState = true; setEnabled(message.enabled); }
+    if (message.type === 'state') { receivedState = true; mode = message.mode || 'resource'; setEnabled(message.enabled); }
+    if (message.type === 'mode') { mode = message.mode; schedule(); }
     if (message.type === 'reset') { sizes.clear(); schedule(); }
     if (message.type === 'sizes') {
       for (const [url, result] of message.results) sizes.set(url, result);
@@ -102,6 +107,7 @@
   chrome.runtime.sendMessage({ type: 'snapshot' }).then(state => {
     if (receivedState) return;
     for (const [url, result] of state.results || []) sizes.set(url, result);
+    mode = state.mode || 'resource';
     setEnabled(state.enabled);
   }).catch(() => {});
   document.addEventListener('load', schedule, true);

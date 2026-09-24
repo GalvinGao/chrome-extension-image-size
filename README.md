@@ -25,7 +25,8 @@ Keep the extracted folder; Chrome loads the extension from it.
 1. Open a webpage and click the extension icon, or press **Alt+Shift+I**, to open the popup.
 2. Turn on **Monitor this tab**. The **ON** badge means monitoring is active.
 3. **Only images loaded AFTER monitoring is enabled can show their size.** Reload the page after enabling it to capture existing images.
-4. Turn the popup switch off to hide the labels and stop monitoring.
+4. Choose **Resource** or **Network** under **Label size**. Switching updates captured labels immediately without another request. The choice lasts for the monitoring session.
+5. Turn the popup switch off to hide the labels and stop monitoring.
 
 Chrome shows a debugging banner while the extension monitors image requests. This is expected. If you used the earlier userscript, disable it to avoid duplicate labels and downloads.
 
@@ -33,7 +34,12 @@ A **—** label means the size is unavailable. Some cached images, partial respo
 
 ## What size is shown?
 
-Labels show the image file size **after HTTP decompression** (such as gzip or Brotli), not the compressed network transfer size. The image format’s own compression—JPEG, PNG, WebP, and so on—remains intact. This is not the image’s decoded bitmap memory size. Units are decimal B / KB / MB.
+Choose the measurement in the popup:
+
+- **Resource** (default): file bytes after HTTP decompression (gzip/Brotli). Image-format compression remains intact; this is not decoded bitmap memory.
+- **Network**: Chrome’s reported response transfer size (`Network.loadingFinished.encodedDataLength`), including response headers and the compressed body. It is not a packet-level bandwidth measurement and excludes request upload and TLS/TCP overhead. This is the final response's size, not the sum of redirect responses.
+
+Cached loads can report **0 B** transferred while their resource size is nonzero. Service-worker responses describe the observed image request, not every underlying fetch made by the worker. Missing transfer measurements show **—**, never a guessed resource size. Units are decimal B / KB / MB. Both measurements come from the original load; switching requires no new requests.
 
 The second line shows the MIME type, right-aligned, with its prefix (such as `image/`) in gray. A suffix such as `+ gzip` or `+ br` appears only when the response has a non-identity **Content-Encoding**. **Transfer-Encoding** describes HTTP message transport (for example, chunking), so it is not displayed as image compression.
 
