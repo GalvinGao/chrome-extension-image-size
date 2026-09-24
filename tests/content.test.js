@@ -74,7 +74,7 @@ test('file-size badge expands details, flags density, updates dimensions and cle
   assert.equal(details.children[7].children[1].textContent, '7.50 MB / MP · high');
   img.srcset = '';
   picture = { querySelectorAll: () => [{ getAttribute: () => 'a 2x' }] };
-  onMessage({ type: 'sizes', results: [[img.src, { ...result, bytes: 4000 }]] }); frames.shift()();
+  onMessage({ type: 'sizes', results: [[img.src, { ...result, bytes: 12000 }]] }); frames.shift()();
   assert.equal('heavy' in host.dataset, false, 'Exactly the threshold is not high');
   assert.equal(details.children[8].hidden, false);
   host.events.pointerleave();

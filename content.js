@@ -124,7 +124,7 @@
       const rect = img.getBoundingClientRect();
       const pixels = rect.width * rect.height;
       const density = pixels > 0 && result?.bytes != null ? result.bytes * 1e6 / pixels : null;
-      const heavy = density !== null && density > 1e6;
+      const heavy = density !== null && density > 3e6;
       if (heavy) entry.host.dataset.heavy = '';
       else delete entry.host.dataset.heavy;
       const time = value => value == null ? '—' : `${Math.round(value)} ms`;
@@ -136,7 +136,7 @@
       const hasSrcset = !!img.srcset?.trim() || [...(img.closest('picture')?.querySelectorAll('source[srcset]') || [])].some(source => source.getAttribute('srcset')?.trim());
       entry.rows.srcset.row.hidden = !hasSrcset;
       entry.rows.srcset.value.textContent = 'YES';
-      entry.note.textContent = heavy ? 'Above 1 MB per displayed MP of resource bytes. A heuristic; small icons and animated images can score high.' : result ? '' : 'Enable monitoring, then reload to capture this image.';
+      entry.note.textContent = heavy ? 'Above 3 MB per displayed MP of resource bytes. A heuristic; small icons and animated images can score high.' : result ? '' : 'Enable monitoring, then reload to capture this image.';
       entry.note.hidden = !entry.note.textContent;
       if ('expanded' in entry.host.dataset) {
         const panelWidth = entry.host.getBoundingClientRect().width;
