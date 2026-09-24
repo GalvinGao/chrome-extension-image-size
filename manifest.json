@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Image File Size",
+  "version": "1.0.0",
+  "description": "Tiny image file-size labels measured from existing requests. No duplicate downloads.",
+  "minimum_chrome_version": "126",
+  "permissions": ["debugger", "scripting", "activeTab"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_title": "Show image file sizes" },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+I" },
+      "description": "Toggle image file sizes for this tab"
+    }
+  },
+  "content_scripts": [{
+    "matches": ["http://*/*", "https://*/*"],
+    "js": ["content.js"],
+    "all_frames": true,
+    "match_origin_as_fallback": true,
+    "run_at": "document_start"
+  }]
+}
