@@ -30,11 +30,11 @@ async function stop(tabId, detach = true) {
 }
 
 export async function toggle(tabId) {
-  if (busy.has(tabId)) return;
+  if (busy.has(tabId)) return { enabled: tabs.has(tabId), error: 'Monitoring is already changing. Please try again.' };
   busy.add(tabId);
   let attached = false;
   try {
-    if (tabs.has(tabId)) return await stop(tabId);
+    if (tabs.has(tabId)) { await stop(tabId); return { enabled: false }; }
     await chrome.debugger.attach({ tabId }, '1.3');
     attached = true;
     tabs.set(tabId, { requests: new Map(), results: new Map(), revision: 0 });
@@ -42,21 +42,33 @@ export async function toggle(tabId) {
     // Covers pages opened before installation. The content script is idempotent.
     await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['content.js'] });
     await publish(tabId, { type: 'state', enabled: true });
-    await badge(tabId, 'ON', 'Hide image file sizes — reload to capture earlier images');
+    await badge(tabId, 'ON', 'Image File Size — monitoring this tab');
+    return { enabled: true };
   } catch (error) {
     if (attached) await stop(tabId);
     await badge(tabId, '!', `Cannot monitor this tab: ${error.message}`);
     console.warn('Image File Size:', error);
+    return { enabled: false, error: error.message };
   } finally {
     busy.delete(tabId);
   }
 }
 
-chrome.action.onClicked.addListener(tab => { if (tab.id !== undefined) void toggle(tab.id); });
 chrome.debugger.onDetach.addListener(source => { if (source.tabId !== undefined) void stop(source.tabId, false); });
 chrome.tabs.onRemoved.addListener(tabId => { tabs.delete(tabId); });
 
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
+  if (message.type === 'popup-status' || message.type === 'popup-toggle') {
+    // Only the extension popup can attach a debugger to an explicitly selected tab.
+    if (sender.url !== chrome.runtime.getURL('popup.html') || !Number.isInteger(message.tabId)) return;
+    if (message.type === 'popup-status') {
+      reply({ enabled: tabs.has(message.tabId), busy: busy.has(message.tabId) });
+    } else {
+      toggle(message.tabId).then(reply, error => reply({ enabled: tabs.has(message.tabId), error: error.message }));
+      return true;
+    }
+    return;
+  }
   if (message.type !== 'snapshot') return;
   const state = tabs.get(sender.tab?.id);
   reply({ enabled: !!state, results: state ? [...state.results] : [] });
@@ -103,7 +115,9 @@ async function onEvent(source, method, params) {
       state.requests.delete(key);
       return;
     }
-    const request = state.requests.get(key) || { urls: [], bytes: 0, chunks: false };
+    const request = state.requests.get(key);
+    // Ignore requests already in flight when monitoring started.
+    if (!request) return;
     request.urls.push(response.url);
     request.response = response;
     state.requests.set(key, request);

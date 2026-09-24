@@ -16,14 +16,18 @@ Keep the extracted folder; Chrome loads the extension from it.
 
 ## Use
 
-1. Open a webpage and click the extension icon, or press **Alt+Shift+I**.
-2. The **ON** badge means monitoring is active for that tab.
-3. Reload the page to capture images that loaded before you enabled monitoring.
-4. Click again to hide the labels and stop monitoring.
+1. Open a webpage and click the extension icon, or press **Alt+Shift+I**, to open the popup.
+2. Turn on **Monitor this tab**. The **ON** badge means monitoring is active.
+3. **Only images loaded AFTER monitoring is enabled can show their size.** Reload the page after enabling it to capture existing images.
+4. Turn the popup switch off to hide the labels and stop monitoring.
 
 Chrome shows a debugging banner while the extension monitors image requests. This is expected. If you used the earlier userscript, disable it to avoid duplicate labels and downloads.
 
 A **—** label means the size is unavailable. Some cached images, partial responses, CSS backgrounds, and images inside shadow roots are not supported. Labels may be clipped by the page's layout. Chrome's internal pages cannot be monitored; hover over an **!** badge for the error.
+
+## What size is shown?
+
+Labels show the image file size **after HTTP decompression** (such as gzip or Brotli), not the compressed network transfer size. The image format’s own compression—JPEG, PNG, WebP, and so on—remains intact. This is not the image’s decoded bitmap memory size. Units are decimal B / KB / MB.
 
 ## Privacy
 

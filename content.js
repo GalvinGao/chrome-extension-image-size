@@ -9,7 +9,6 @@
   let receivedState = false;
   let frame = 0;
   const observer = new MutationObserver(schedule);
-  const timing = new PerformanceObserver(schedule);
   const canonical = url => url.split('#')[0];
   const format = bytes => bytes < 1000 ? `${bytes} B` : bytes < 1e6 ? `${(bytes / 1000).toFixed(1)} KB` : `${(bytes / 1e6).toFixed(2)} MB`;
 
@@ -53,11 +52,7 @@
       }
       if (img.nextSibling !== entry.host) img.after(entry.host);
       const url = img.currentSrc || img.src;
-      let result = sizes.get(canonical(url));
-      if (!result || result.bytes === null) {
-        const resource = performance.getEntriesByName(url).findLast(item => item.decodedBodySize > 0);
-        if (resource) result = { bytes: resource.decodedBodySize };
-      }
+      const result = sizes.get(canonical(url));
       entry.label.textContent = result?.bytes != null ? format(result.bytes) : '—';
       entry.host.title = result?.bytes != null ? `${result.bytes.toLocaleString()} bytes` : result?.reason || 'Not captured. Reload with monitoring enabled to capture image requests.';
       entry.host.style.setProperty('display', img.naturalWidth ? 'block' : 'none', 'important');
@@ -69,11 +64,9 @@
     if (enabled === value) return;
     enabled = value;
     if (enabled) {
-      timing.observe({ type: 'resource', buffered: true });
       schedule();
     } else {
       observer.disconnect();
-      timing.disconnect();
       cancelAnimationFrame(frame);
       frame = 0;
       for (const [img, entry] of entries) remove(img, entry);

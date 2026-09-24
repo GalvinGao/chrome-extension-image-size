@@ -1,24 +1,46 @@
 {
   "manifest_version": 3,
   "name": "Image File Size",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Tiny image file-size labels measured from existing requests. No duplicate downloads.",
   "minimum_chrome_version": "126",
-  "permissions": ["debugger", "scripting", "activeTab"],
-  "host_permissions": ["http://*/*", "https://*/*"],
-  "background": { "service_worker": "background.js", "type": "module" },
-  "action": { "default_title": "Show image file sizes" },
+  "permissions": [
+    "debugger",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Image File Size",
+    "default_popup": "popup.html"
+  },
   "commands": {
     "_execute_action": {
-      "suggested_key": { "default": "Alt+Shift+I" },
-      "description": "Toggle image file sizes for this tab"
+      "suggested_key": {
+        "default": "Alt+Shift+I"
+      },
+      "description": "Open image file size controls"
     }
   },
-  "content_scripts": [{
-    "matches": ["http://*/*", "https://*/*"],
-    "js": ["content.js"],
-    "all_frames": true,
-    "match_origin_as_fallback": true,
-    "run_at": "document_start"
-  }]
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "all_frames": true,
+      "match_origin_as_fallback": true,
+      "run_at": "document_start"
+    }
+  ]
 }

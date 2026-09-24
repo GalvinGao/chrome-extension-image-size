@@ -13,7 +13,7 @@ globalThis.chrome = {
   action: { onClicked: listener('click'), setBadgeText: async () => {}, setBadgeBackgroundColor: async () => {}, setTitle: async () => {} },
   tabs: { onRemoved: listener('removed'), sendMessage: async (id, message) => { messages.push({ id, ...message }); } },
   scripting: { executeScript: async () => {} },
-  runtime: { onMessage: listener('message') },
+  runtime: { getURL: path => `chrome-extension://test/${path}`, onMessage: listener('message') },
 };
 const { toggle } = await import('../background.js');
 const event = (method, params, sessionId) => events.event({ tabId: 10, ...(sessionId ? { sessionId } : {}) }, method, params);
@@ -31,11 +31,13 @@ test('network lifecycle records file bytes, handles cache, redirects, partials, 
   assert.equal(result.results[0][1].bytes, 80);
   assert.deepEqual(result.results.map(([url]) => url), ['https://a/image', 'https://b/image', 'https://b/image']);
 
+  event('Network.requestWillBeSent', { requestId: '2', request: { url: 'https://a/2' } });
   event('Network.responseReceived', { requestId: '2', type: 'Image', response: { url: 'https://a/cached', status: 200, headers: {} } });
   event('Network.loadingFinished', { requestId: '2' });
   await settle();
   assert.equal(messages.findLast(m => m.type === 'sizes').results[0][1].bytes, 3);
 
+  event('Network.requestWillBeSent', { requestId: '3', request: { url: 'https://a/3' } });
   event('Network.responseReceived', { requestId: '3', type: 'Image', response: { url: 'https://a/partial', status: 206, headers: { 'Content-Length': '4' } } });
   event('Network.loadingFinished', { requestId: '3' });
   await settle();
@@ -51,4 +53,33 @@ test('network lifecycle records file bytes, handles cache, redirects, partials, 
   let snapshot;
   events.message({ type: 'snapshot' }, { tab: { id: 10 } }, value => { snapshot = value; });
   assert.equal(snapshot.enabled, false);
+});
+
+
+test('popup control returns real state and rejects content-script control messages', async () => {
+  const popup = { url: 'chrome-extension://test/popup.html' };
+  const request = message => new Promise(resolve => events.message(message, popup, resolve));
+  assert.equal((await request({ type: 'popup-status', tabId: 20 })).enabled, false);
+  assert.equal((await request({ type: 'popup-toggle', tabId: 20 })).enabled, true);
+  assert.equal((await request({ type: 'popup-status', tabId: 20 })).enabled, true);
+  let replied = false;
+  events.message({ type: 'popup-toggle', tabId: 20 }, { url: 'https://example.com' }, () => { replied = true; });
+  assert.equal(replied, false);
+  assert.equal((await request({ type: 'popup-toggle', tabId: 20 })).enabled, false);
+  const attach = chrome.debugger.attach;
+  chrome.debugger.attach = async () => { throw new Error('Restricted page'); };
+  const result = await request({ type: 'popup-toggle', tabId: 20 });
+  assert.equal(result.enabled, false);
+  assert.equal(result.error, 'Restricted page');
+  chrome.debugger.attach = attach;
+});
+
+test('responses for requests started before enabling are ignored', async () => {
+  await toggle(10);
+  const count = messages.filter(m => m.type === 'sizes').length;
+  event('Network.responseReceived', { requestId: 'old', type: 'Image', response: { url: 'https://a/old', status: 200, headers: { 'Content-Length': '100' } } });
+  event('Network.loadingFinished', { requestId: 'old' });
+  await settle();
+  assert.equal(messages.filter(m => m.type === 'sizes').length, count);
+  await toggle(10);
 });

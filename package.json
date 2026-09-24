@@ -1,7 +1,10 @@
 {
   "name": "chrome-extension-image-size",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test tests/*.test.js", "check": "node --check background.js && node --check content.js && node --check sizes.js" }
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node --check background.js && node --check content.js && node --check sizes.js && node --check popup.js"
+  }
 }
