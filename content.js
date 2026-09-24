@@ -81,7 +81,8 @@
         style.textContent = `
           :host::backdrop { background: transparent !important; pointer-events: none !important; }
           .label { display:block;padding:1px 3px;border-radius:3px;background:#16181eeF;color:#fff;font:9px/12px ui-monospace,SFMono-Regular,Consolas,monospace;text-align:right; }
-          :host([data-heavy]) .label { background:#a32222; }
+          :host([data-density="warning"]) .label { background:#9a420d; }
+          :host([data-density="high"]) .label { background:#a32222; }
           .size { display:block;white-space:nowrap; }
           .details { display:none; }
           :host([data-expanded]) .label { padding:6px 8px; }
@@ -124,19 +125,19 @@
       const rect = img.getBoundingClientRect();
       const pixels = rect.width * rect.height;
       const density = pixels > 0 && result?.bytes != null ? result.bytes * 1e6 / pixels : null;
-      const heavy = density !== null && density > 3e6;
-      if (heavy) entry.host.dataset.heavy = '';
-      else delete entry.host.dataset.heavy;
+      const severity = density > 6e6 ? 'high' : density !== null && density >= 3e6 ? 'warning' : '';
+      if (severity) entry.host.dataset.density = severity;
+      else delete entry.host.dataset.density;
       const time = value => value == null ? '—' : `${Math.round(value)} ms`;
       entry.rows.transfer.value.textContent = result?.networkBytes != null ? format(result.networkBytes) : '—';
       entry.rows.resource.value.textContent = result?.bytes != null ? format(result.bytes) : '—';
       entry.rows.delivery.value.textContent = result?.delivery || '—';
       entry.rows.duration.value.textContent = `${time(result?.durationMs)} / ${time(result?.ttfbMs)}`;
-      entry.rows.density.value.textContent = density !== null ? `${format(density)} / MP${heavy ? ' · high' : ''}` : '—';
+      entry.rows.density.value.textContent = density !== null ? `${format(density)} / MP${severity ? ` · ${severity}` : ''}` : '—';
       const hasSrcset = !!img.srcset?.trim() || [...(img.closest('picture')?.querySelectorAll('source[srcset]') || [])].some(source => source.getAttribute('srcset')?.trim());
       entry.rows.srcset.row.hidden = !hasSrcset;
       entry.rows.srcset.value.textContent = 'YES';
-      entry.note.textContent = heavy ? 'Above 3 MB per displayed MP of resource bytes. A heuristic; small icons and animated images can score high.' : result ? '' : 'Enable monitoring, then reload to capture this image.';
+      entry.note.textContent = severity ? `${severity === 'high' ? 'Above 6' : '3–6'} MB per displayed MP of resource bytes. A heuristic; small icons and animated images can score high.` : result ? '' : 'Enable monitoring, then reload to capture this image.';
       entry.note.hidden = !entry.note.textContent;
       if ('expanded' in entry.host.dataset) {
         const panelWidth = entry.host.getBoundingClientRect().width;
@@ -144,7 +145,7 @@
         entry.rows.intrinsic.value.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
         entry.rows.displayed.value.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}`;
       }
-      entry.host.setAttribute('aria-label', `Image file size ${entry.size.textContent}${heavy ? ', high bytes per displayed megapixel' : ''}. Focus for details.`);
+      entry.host.setAttribute('aria-label', `Image file size ${entry.size.textContent}${severity ? `, ${severity} bytes per displayed megapixel` : ''}. Focus for details.`);
       const visible = img.naturalWidth > 0;
       entry.host.style.setProperty('display', visible ? 'block' : 'none', 'important');
       // z-index cannot escape an ancestor stacking context; the top layer can.

@@ -51,7 +51,7 @@ Hover or keyboard-focus the label for:
 - Resource bytes per displayed megapixel: resource bytes ÷ (displayed CSS width × height) × 1,000,000. This updates when the displayed size changes.
 - `srcset YES` only when the image or its `<picture>` sources have a nonempty srcset.
 
-**Red labels mean more than 3 MB per displayed megapixel** (decimal units), using resource bytes so caching and HTTP compression do not hide heavy images. This is a heuristic, not a quality score: small icons, transparency, and animated files can legitimately score high. The expanded label includes the numeric density and threshold explanation. Press Escape to collapse it.
+**Deep orange: 3–6 MB per displayed megapixel (inclusive). Red: above 6 MB per displayed megapixel. Below 3 stays neutral.** (decimal units), using resource bytes so caching and HTTP compression do not hide heavy images. This is a heuristic, not a quality score: small icons, transparency, and animated files can legitimately score high. The expanded label includes the numeric density and threshold explanation. Press Escape to collapse it.
 
 The 3 MB threshold is a deliberately forgiving heuristic, not a web standard. Google’s [2019 experimental image-policy guidance](https://web.dev/articles/image-policies) suggested 0.5 bytes per intrinsic pixel for lossy images. At [2× device pixel ratio](https://web.dev/learn/performance/image-performance), four source pixels correspond to one displayed CSS pixel, making that roughly 2 MB per displayed MP before fixed overhead. We use 3 MB to allow extra headroom. Device density, image content, lossless formats, and animation still affect what is reasonable.
 
