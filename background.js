@@ -1,4 +1,4 @@
-import { headerSize, bodySize, canonicalURL } from './sizes.js';
+import { headerSize, bodySize, canonicalURL, responseMetadata } from './sizes.js';
 
 const tabs = new Map();
 const busy = new Set();
@@ -127,7 +127,7 @@ async function onEvent(source, method, params) {
   } else if (method === 'Network.loadingFailed') {
     const request = state.requests.get(key);
     state.requests.delete(key);
-    if (request?.response) record(tabId, state, request.urls, { bytes: null, reason: 'Image request failed' });
+    if (request?.response) record(tabId, state, request.urls, { bytes: null, reason: 'Image request failed', ...responseMetadata(request.response) });
   } else if (method === 'Network.loadingFinished') {
     const request = state.requests.get(key);
     state.requests.delete(key);
@@ -148,7 +148,7 @@ async function onEvent(source, method, params) {
         } catch { /* Evicted/cached bodies may no longer be accessible. */ }
       }
     } else reason = `HTTP ${response.status}`;
-    if (state.revision === revision) record(tabId, state, request.urls, { bytes, reason });
+    if (state.revision === revision) record(tabId, state, request.urls, { bytes, reason, ...responseMetadata(response) });
   }
 }
 chrome.debugger.onEvent.addListener((source, method, params) => {

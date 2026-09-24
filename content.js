@@ -45,15 +45,31 @@
         host.style.cssText = `all:initial!important;position:absolute!important;position-anchor:${name}!important;top:anchor(top)!important;left:anchor(right)!important;transform:translateX(-100%)!important;margin:2px 0 0 -2px!important;padding:0!important;border:0!important;pointer-events:none!important;z-index:2147483647!important;position-visibility:anchors-visible!important;`;
         const root = host.attachShadow({ mode: 'closed' });
         const label = document.createElement('span');
-        label.style.cssText = 'display:block;padding:1px 3px;border-radius:2px;background:#000c;color:white;font:9px/12px ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap;user-select:none';
+        label.style.cssText = 'display:block;padding:1px 3px;border-radius:2px;background:#000c;color:white;font:9px/12px ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap;user-select:none;text-align:right';
+        const size = document.createElement('span');
+        size.style.display = 'block';
+        const details = document.createElement('span');
+        details.style.cssText = 'display:block;font-size:8px;line-height:11px;text-align:right';
+        const mimePrefix = document.createElement('span');
+        mimePrefix.style.color = '#a5a5a5';
+        const subtype = document.createElement('span');
+        const encoding = document.createElement('span');
+        details.append(mimePrefix, subtype, encoding);
+        label.append(size, details);
         root.append(label);
-        entry = { host, label, original, priority, assigned };
+        entry = { host, size, details, prefix: mimePrefix, subtype, encoding, original, priority, assigned };
         entries.set(img, entry);
       }
       if (img.nextSibling !== entry.host) img.after(entry.host);
       const url = img.currentSrc || img.src;
       const result = sizes.get(canonical(url));
-      entry.label.textContent = result?.bytes != null ? format(result.bytes) : '—';
+      entry.size.textContent = result?.bytes != null ? format(result.bytes) : '—';
+      const mime = result?.mimeType || '';
+      const slash = mime.indexOf('/');
+      entry.prefix.textContent = slash >= 0 ? mime.slice(0, slash + 1) : '';
+      entry.subtype.textContent = slash >= 0 ? mime.slice(slash + 1) : mime;
+      entry.encoding.textContent = result?.contentEncoding ? `${mime ? ' + ' : ''}${result.contentEncoding}` : '';
+      entry.details.style.display = mime || result?.contentEncoding ? 'block' : 'none';
       entry.host.title = result?.bytes != null ? `${result.bytes.toLocaleString()} bytes` : result?.reason || 'Not captured. Reload with monitoring enabled to capture image requests.';
       entry.host.style.setProperty('display', img.naturalWidth ? 'block' : 'none', 'important');
     }

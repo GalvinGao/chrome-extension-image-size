@@ -19,3 +19,12 @@ export function bodySize({ body, base64Encoded }) {
 export function canonicalURL(url) {
   return url.split('#')[0];
 }
+
+export function responseMetadata(response) {
+  const candidate = String(response.mimeType || header(response.headers, 'content-type') || '').split(';')[0].trim().toLowerCase();
+  const mimeType = /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/.test(candidate) ? candidate : '';
+  const contentEncoding = String(header(response.headers, 'content-encoding') || '')
+    .split(',').map(value => value.trim().toLowerCase())
+    .filter(value => value && value !== 'identity').join(', ');
+  return { mimeType, contentEncoding };
+}

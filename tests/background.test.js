@@ -23,12 +23,14 @@ test('network lifecycle records file bytes, handles cache, redirects, partials, 
   await toggle(10);
   event('Network.requestWillBeSent', { requestId: '1', request: { url: 'https://a/image' } });
   event('Network.requestWillBeSent', { requestId: '1', request: { url: 'https://b/image' }, redirectResponse: {} });
-  event('Network.responseReceived', { requestId: '1', type: 'Image', response: { url: 'https://b/image', status: 200, headers: { 'Content-Encoding': 'gzip', 'Content-Length': '5' } } });
+  event('Network.responseReceived', { requestId: '1', type: 'Image', response: { url: 'https://b/image', mimeType: 'image/jpeg', status: 200, headers: { 'Content-Encoding': 'gzip', 'Content-Length': '5' } } });
   event('Network.dataReceived', { requestId: '1', dataLength: 80, encodedDataLength: 5 });
   event('Network.loadingFinished', { requestId: '1', encodedDataLength: 200 });
   await settle();
   let result = messages.findLast(m => m.type === 'sizes');
   assert.equal(result.results[0][1].bytes, 80);
+  assert.equal(result.results[0][1].mimeType, 'image/jpeg');
+  assert.equal(result.results[0][1].contentEncoding, 'gzip');
   assert.deepEqual(result.results.map(([url]) => url), ['https://a/image', 'https://b/image', 'https://b/image']);
 
   event('Network.requestWillBeSent', { requestId: '2', request: { url: 'https://a/2' } });

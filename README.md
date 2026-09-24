@@ -2,6 +2,12 @@
 
 A Chrome extension that shows tiny **B / KB / MB** labels at the top-right of images. It measures the page's existing image requests without downloading images again.
 
+## Example
+
+![Image File Size showing file-size labels on a video thumbnail and avatar](docs/example.png)
+
+The screenshot shows the size labels. Current labels also show the MIME type below the size when available, for example `image/jpeg + gzip`, with `image/` muted.
+
 ## Install
 
 Requires **Chrome 126 or newer**. No build step is needed.
@@ -28,6 +34,10 @@ A **—** label means the size is unavailable. Some cached images, partial respo
 ## What size is shown?
 
 Labels show the image file size **after HTTP decompression** (such as gzip or Brotli), not the compressed network transfer size. The image format’s own compression—JPEG, PNG, WebP, and so on—remains intact. This is not the image’s decoded bitmap memory size. Units are decimal B / KB / MB.
+
+The second line shows the MIME type, right-aligned, with its prefix (such as `image/`) in gray. A suffix such as `+ gzip` or `+ br` appears only when the response has a non-identity **Content-Encoding**. **Transfer-Encoding** describes HTTP message transport (for example, chunking), so it is not displayed as image compression.
+
+Extra HTTP compression on already-compressed formats such as JPEG is often unnecessary; the suffix makes it visible. Compression is still useful for text-based formats such as SVG.
 
 ## Privacy
 
