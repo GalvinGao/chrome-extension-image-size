@@ -11,5 +11,7 @@ test('saved settings preserve valid values and reject unknown or malformed value
   assert.throws(() => changeSetting(defaults, 'mime', 'false'));
   assert.throws(() => changeSetting(defaults, 'badge', 'invalid'));
   assert.equal(changeSetting(defaults, 'mime', false).mime, false);
+  assert.equal(normalizeSettings({badge:'density'}).badge, 'density');
+  assert.equal(changeSetting(defaults, 'badge', 'density').badge, 'density');
   assert.equal(defaults.mime, true);
 });

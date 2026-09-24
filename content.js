@@ -117,7 +117,6 @@
       const url = img.currentSrc || img.src;
       const result = sizes.get(canonical(url));
       const bytes = settings.badge === 'resource' ? result?.bytes : settings.badge === 'transfer' ? result?.networkBytes : result?.fileBytes;
-      entry.size.textContent = bytes != null ? format(bytes) : '—';
       const mime = result?.mimeType || '';
       const slash = mime.indexOf('/');
       entry.prefix.textContent = slash >= 0 ? mime.slice(0, slash + 1) : '';
@@ -127,6 +126,9 @@
       const rect = img.getBoundingClientRect();
       const pixels = rect.width * rect.height;
       const density = pixels > 0 && result?.bytes != null ? result.bytes * 1e6 / pixels : null;
+      entry.size.textContent = settings.badge === 'density'
+        ? density !== null ? `${format(density)} / MP` : '—'
+        : bytes != null ? format(bytes) : '—';
       const severity = density > 8e6 ? 'high' : density !== null && density >= 3e6 ? 'warning' : '';
       if (severity && settings.colors !== false) entry.host.dataset.density = severity;
       else delete entry.host.dataset.density;
@@ -148,7 +150,7 @@
         entry.rows.intrinsic.value.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
         entry.rows.displayed.value.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}`;
       }
-      entry.host.setAttribute('aria-label', `Image ${settings.badge === 'transfer' ? 'transferred' : settings.badge === 'resource' ? 'resource' : 'file'} size ${entry.size.textContent}${severity ? `, ${severity} bytes per displayed megapixel` : ''}. Focus for details.`);
+      entry.host.setAttribute('aria-label', `Image ${settings.badge === 'density' ? 'bytes per displayed megapixel' : settings.badge === 'transfer' ? 'transferred size' : settings.badge === 'resource' ? 'resource size' : 'file size'} ${entry.size.textContent}${severity ? `, ${severity} bytes per displayed megapixel` : ''}. Focus for details.`);
       const visible = img.naturalWidth > 0;
       entry.host.style.setProperty('display', visible ? 'block' : 'none', 'important');
       // z-index cannot escape an ancestor stacking context; the top layer can.

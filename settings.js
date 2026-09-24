@@ -5,14 +5,14 @@ export const defaults = Object.freeze({
 
 export function normalizeSettings(value = {}) {
   return Object.fromEntries(Object.entries(defaults).map(([key, fallback]) => [key,
-    key === 'badge' ? ['file', 'resource', 'transfer'].includes(value?.[key]) ? value[key] : fallback :
+    key === 'badge' ? ['file', 'resource', 'transfer', 'density'].includes(value?.[key]) ? value[key] : fallback :
       typeof value?.[key] === 'boolean' ? value[key] : fallback,
   ]));
 }
 
 export function changeSetting(current, key, value) {
   if (!Object.hasOwn(defaults, key) ||
-      (key === 'badge' ? !['file', 'resource', 'transfer'].includes(value) : typeof value !== 'boolean')) {
+      (key === 'badge' ? !['file', 'resource', 'transfer', 'density'].includes(value) : typeof value !== 'boolean')) {
     throw new Error('Invalid display setting');
   }
   return { ...current, [key]: value };

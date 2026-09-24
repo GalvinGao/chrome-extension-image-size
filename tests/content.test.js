@@ -116,6 +116,18 @@ test('file-size badge expands details, flags density, updates dimensions and cle
   onMessage({ type:'settings', settings: {badge:'resource'} }); frames.shift()();
   assert.equal(size.textContent, '30.0 KB');
   assert.equal(details.children[3].hidden, false);
+  onMessage({ type:'settings', settings: {badge:'density', density:false} }); frames.shift()();
+  assert.equal(size.textContent, '7.50 MB / MP');
+  assert.equal(details.children[7].hidden, true, 'Badge density is independent of hover detail visibility');
+  displayWidth = 100;
+  resized(); frames.shift()();
+  assert.equal(size.textContent, '6.00 MB / MP', 'Ratio badge updates when displayed area changes');
+  displayWidth = 0;
+  resized(); frames.shift()();
+  assert.equal(size.textContent, '—');
+  displayWidth = 100;
+  onMessage({ type:'sizes', results:[[img.src, {fileBytes:30000}]] }); frames.shift()();
+  assert.equal(size.textContent, '—', 'Unknown resource size does not fall back to file bytes');
   onMessage({ type: 'state', enabled: false });
   assert.equal(host.open, false);
   assert.equal(host.removed, true);

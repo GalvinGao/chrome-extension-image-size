@@ -38,7 +38,7 @@ A **—** label means the size is unavailable. Some cached images, partial respo
 
 ## Display preferences
 
-Use **Display** in the popup to choose the badge value (file size, resource size, or transferred bytes), toggle warning colors, and choose which hover details appear. Preferences are saved locally across browser restarts and apply to all monitored tabs immediately. Srcset remains hidden when absent even if enabled.
+Use **Display** in the popup to choose the badge value (file size, resource size, transferred bytes, or bytes per displayed megapixel), toggle warning colors, and choose which hover details appear. Preferences are saved locally across browser restarts and apply to all monitored tabs immediately. Srcset remains hidden when absent even if enabled.
 
 ## What size is shown?
 
