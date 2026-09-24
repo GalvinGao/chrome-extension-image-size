@@ -6,6 +6,8 @@
   const prefix = `--ifs-${Math.random().toString(36).slice(2)}-`;
   let sequence = 0;
   let enabled = false;
+  let settings = {};
+  let receivedSettings = false;
   let receivedState = false;
   let frame = 0;
   const observer = new MutationObserver(schedule);
@@ -114,19 +116,19 @@
       if (img.nextSibling !== entry.host) img.after(entry.host);
       const url = img.currentSrc || img.src;
       const result = sizes.get(canonical(url));
-      const bytes = result?.fileBytes;
+      const bytes = settings.badge === 'resource' ? result?.bytes : settings.badge === 'transfer' ? result?.networkBytes : result?.fileBytes;
       entry.size.textContent = bytes != null ? format(bytes) : '—';
       const mime = result?.mimeType || '';
       const slash = mime.indexOf('/');
       entry.prefix.textContent = slash >= 0 ? mime.slice(0, slash + 1) : '';
       entry.subtype.textContent = slash >= 0 ? mime.slice(slash + 1) : mime;
       entry.encoding.textContent = result?.contentEncoding ? `${mime ? ' + ' : ''}${result.contentEncoding}` : '';
-      entry.mimeLine.hidden = !mime && !result?.contentEncoding;
+      entry.mimeLine.hidden = settings.mime === false || (!mime && !result?.contentEncoding);
       const rect = img.getBoundingClientRect();
       const pixels = rect.width * rect.height;
       const density = pixels > 0 && result?.bytes != null ? result.bytes * 1e6 / pixels : null;
-      const severity = density > 6e6 ? 'high' : density !== null && density >= 3e6 ? 'warning' : '';
-      if (severity) entry.host.dataset.density = severity;
+      const severity = density > 8e6 ? 'high' : density !== null && density >= 3e6 ? 'warning' : '';
+      if (severity && settings.colors !== false) entry.host.dataset.density = severity;
       else delete entry.host.dataset.density;
       const time = value => value == null ? '—' : `${Math.round(value)} ms`;
       entry.rows.transfer.value.textContent = result?.networkBytes != null ? format(result.networkBytes) : '—';
@@ -135,17 +137,18 @@
       entry.rows.duration.value.textContent = `${time(result?.durationMs)} / ${time(result?.ttfbMs)}`;
       entry.rows.density.value.textContent = density !== null ? `${format(density)} / MP${severity ? ` · ${severity}` : ''}` : '—';
       const hasSrcset = !!img.srcset?.trim() || [...(img.closest('picture')?.querySelectorAll('source[srcset]') || [])].some(source => source.getAttribute('srcset')?.trim());
-      entry.rows.srcset.row.hidden = !hasSrcset;
+      for (const [key, row] of Object.entries(entry.rows)) row.row.hidden = settings[key] === false;
+      entry.rows.srcset.row.hidden = settings.srcset === false || !hasSrcset;
       entry.rows.srcset.value.textContent = 'YES';
-      entry.note.textContent = severity ? `${severity === 'high' ? 'Above 6' : '3–6'} MB per displayed MP of resource bytes. A heuristic; small icons and animated images can score high.` : result ? '' : 'Enable monitoring, then reload to capture this image.';
-      entry.note.hidden = !entry.note.textContent;
+      entry.note.textContent = severity ? `${severity === 'high' ? 'Above 8' : '3–8'} MB per displayed MP of resource bytes. A heuristic; small icons and animated images can score high.` : result ? '' : 'Enable monitoring, then reload to capture this image.';
+      entry.note.hidden = !entry.note.textContent || (result && settings.density === false);
       if ('expanded' in entry.host.dataset) {
         const panelWidth = entry.host.getBoundingClientRect().width;
         entry.host.style.setProperty('margin-left', `${Math.max(0, panelWidth + 6 - rect.right) - 2}px`, 'important');
         entry.rows.intrinsic.value.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
         entry.rows.displayed.value.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}`;
       }
-      entry.host.setAttribute('aria-label', `Image file size ${entry.size.textContent}${severity ? `, ${severity} bytes per displayed megapixel` : ''}. Focus for details.`);
+      entry.host.setAttribute('aria-label', `Image ${settings.badge === 'transfer' ? 'transferred' : settings.badge === 'resource' ? 'resource' : 'file'} size ${entry.size.textContent}${severity ? `, ${severity} bytes per displayed megapixel` : ''}. Focus for details.`);
       const visible = img.naturalWidth > 0;
       entry.host.style.setProperty('display', visible ? 'block' : 'none', 'important');
       // z-index cannot escape an ancestor stacking context; the top layer can.
@@ -172,7 +175,8 @@
   }
 
   chrome.runtime.onMessage.addListener(message => {
-    if (message.type === 'state') { receivedState = true; setEnabled(message.enabled); }
+    if (message.type === 'state') { receivedState = true; if (message.settings) settings = message.settings; setEnabled(message.enabled); }
+    if (message.type === 'settings') { receivedSettings = true; settings = message.settings; schedule(); }
     if (message.type === 'reset') { sizes.clear(); schedule(); }
     if (message.type === 'sizes') {
       for (const [url, result] of message.results) sizes.set(url, result);
@@ -183,6 +187,7 @@
   chrome.runtime.sendMessage({ type: 'snapshot' }).then(state => {
     if (receivedState) return;
     for (const [url, result] of state.results || []) sizes.set(url, result);
+    if (!receivedSettings) settings = state.settings || {};
     setEnabled(state.enabled);
   }).catch(() => {});
   document.addEventListener('load', schedule, true);

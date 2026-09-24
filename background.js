@@ -1,7 +1,25 @@
+import { defaults, normalizeSettings, changeSetting } from './settings.js';
 import { headerSize, bodySize, canonicalURL, responseMetadata, requestMetrics, encodedFileSize } from './sizes.js';
 
 const tabs = new Map();
 const busy = new Set();
+let settings = { ...defaults };
+const settingsReady = chrome.storage.local.get('displaySettings').then(saved => {
+  settings = normalizeSettings(saved.displaySettings);
+}).catch(error => console.warn('Image File Size settings:', error));
+let settingsQueue = settingsReady;
+
+function saveSetting(key, value) {
+  const pending = settingsQueue.then(async () => {
+    const next = changeSetting(settings, key, value);
+    await chrome.storage.local.set({ displaySettings: next });
+    settings = next;
+    await Promise.all([...tabs.keys()].map(tabId => publish(tabId, { type: 'settings', settings })));
+    return { settings };
+  });
+  settingsQueue = pending.catch(() => {});
+  return pending;
+}
 const send = (target, method, params = {}) => chrome.debugger.sendCommand(target, method, params);
 const publish = (tabId, message) => chrome.tabs.sendMessage(tabId, message).catch(() => {});
 
@@ -34,6 +52,7 @@ export async function toggle(tabId) {
   busy.add(tabId);
   let attached = false;
   try {
+    await settingsReady;
     if (tabs.has(tabId)) { await stop(tabId); return { enabled: false }; }
     await chrome.debugger.attach({ tabId }, '1.3');
     attached = true;
@@ -41,7 +60,7 @@ export async function toggle(tabId) {
     await configure({ tabId });
     // Covers pages opened before installation. The content script is idempotent.
     await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['content.js'] });
-    await publish(tabId, { type: 'state', enabled: true });
+    await publish(tabId, { type: 'state', enabled: true, settings });
     await badge(tabId, 'ON', 'Image File Size — monitoring this tab');
     return { enabled: true };
   } catch (error) {
@@ -58,20 +77,25 @@ chrome.debugger.onDetach.addListener(source => { if (source.tabId !== undefined)
 chrome.tabs.onRemoved.addListener(tabId => { tabs.delete(tabId); });
 
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
-  if (message.type === 'popup-status' || message.type === 'popup-toggle') {
-    // Only the extension popup can attach a debugger to an explicitly selected tab.
-    if (sender.url !== chrome.runtime.getURL('popup.html') || !Number.isInteger(message.tabId)) return;
-    if (message.type === 'popup-status') {
-      reply({ enabled: tabs.has(message.tabId), busy: busy.has(message.tabId) });
-    } else {
-      toggle(message.tabId).then(reply, error => reply({ enabled: tabs.has(message.tabId), error: error.message }));
+  if (['popup-status', 'popup-toggle', 'popup-setting'].includes(message.type)) {
+    if (sender.url !== chrome.runtime.getURL('popup.html')) return;
+    if (message.type === 'popup-setting') {
+      saveSetting(message.key, message.value).then(reply, error => reply({ settings, error: error.message }));
       return true;
     }
-    return;
+    if (!Number.isInteger(message.tabId)) return;
+    settingsReady.then(async () => {
+      if (message.type === 'popup-toggle') return { ...await toggle(message.tabId), settings };
+      return { enabled: tabs.has(message.tabId), busy: busy.has(message.tabId), settings };
+    }).then(reply, error => reply({ enabled: tabs.has(message.tabId), settings, error: error.message }));
+    return true;
   }
   if (message.type !== 'snapshot') return;
-  const state = tabs.get(sender.tab?.id);
-  reply({ enabled: !!state, results: state ? [...state.results] : [] });
+  settingsReady.then(() => {
+    const state = tabs.get(sender.tab?.id);
+    reply({ enabled: !!state, settings, results: state ? [...state.results] : [] });
+  }, () => reply({ enabled: false, settings, results: [] }));
+  return true;
 });
 
 function record(tabId, state, urls, value) {

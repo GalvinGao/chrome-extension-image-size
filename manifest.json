@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Image File Size",
-  "version": "1.4.5",
+  "version": "1.5.0",
   "description": "Tiny image file-size labels measured from existing requests. No duplicate downloads.",
   "minimum_chrome_version": "126",
   "permissions": [
     "debugger",
     "scripting",
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "host_permissions": [
     "http://*/*",

@@ -36,6 +36,10 @@ Chrome shows a debugging banner while the extension monitors image requests. Thi
 
 A **—** label means the size is unavailable. Some cached images, partial responses, CSS backgrounds, and images inside shadow roots are not supported. Labels use the browser’s top layer to stay above ordinary page overlays, while CSS anchors keep them attached to each image. Labels inside a frame remain within that frame. Chrome's internal pages cannot be monitored; hover over an **!** badge for the error.
 
+## Display preferences
+
+Use **Display** in the popup to choose the badge value (file size, resource size, or transferred bytes), toggle warning colors, and choose which hover details appear. Preferences are saved locally across browser restarts and apply to all monitored tabs immediately. Srcset remains hidden when absent even if enabled.
+
 ## What size is shown?
 
 The collapsed label shows **encoded image file size**, excluding response headers. It uses the full response Content-Length when available, resource bytes when there is no HTTP compression, or observed encoded body bytes. Cache validation traffic is never used as the file size. Unavailable measurements show **—**. No extra requests are made.
@@ -51,7 +55,7 @@ Hover or keyboard-focus the label for:
 - Resource bytes per displayed megapixel: resource bytes ÷ (displayed CSS width × height) × 1,000,000. This updates when the displayed size changes.
 - `srcset YES` only when the image or its `<picture>` sources have a nonempty srcset.
 
-**Deep orange: 3–6 MB per displayed megapixel (inclusive). Red: above 6 MB per displayed megapixel. Below 3 stays neutral.** (decimal units), using resource bytes so caching and HTTP compression do not hide heavy images. This is a heuristic, not a quality score: small icons, transparency, and animated files can legitimately score high. The expanded label includes the numeric density and threshold explanation. Press Escape to collapse it.
+**Deep orange: 3–8 MB per displayed megapixel (inclusive). Red: above 8 MB per displayed megapixel. Below 3 stays neutral.** (decimal units), using resource bytes so caching and HTTP compression do not hide heavy images. This is a heuristic, not a quality score: small icons, transparency, and animated files can legitimately score high. The expanded label includes the numeric density and threshold explanation. Press Escape to collapse it.
 
 The 3 MB threshold is a deliberately forgiving heuristic, not a web standard. Google’s [2019 experimental image-policy guidance](https://web.dev/articles/image-policies) suggested 0.5 bytes per intrinsic pixel for lossy images. At [2× device pixel ratio](https://web.dev/learn/performance/image-performance), four source pixels correspond to one displayed CSS pixel, making that roughly 2 MB per displayed MP before fixed overhead. We use 3 MB to allow extra headroom. Device density, image content, lossless formats, and animation still affect what is reasonable.
 

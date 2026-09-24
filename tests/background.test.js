@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 const events = {};
 const calls = [];
 const messages = [];
+const saved = {};
 const listener = name => ({ addListener(fn) { events[name] = fn; } });
 globalThis.chrome = {
+  storage: { local: { get: async () => ({ ...saved }), set: async value => Object.assign(saved, value) } },
   debugger: {
     attach: async () => {}, detach: async () => {},
     sendCommand: async (source, method) => { calls.push(method); return { body: 'YWJj', base64Encoded: true }; },
@@ -57,6 +59,7 @@ test('network lifecycle records file bytes, handles cache, redirects, partials, 
   assert.equal(messages.findLast(m => m.type === 'state').enabled, false);
   let snapshot;
   events.message({ type: 'snapshot' }, { tab: { id: 10 } }, value => { snapshot = value; });
+  await settle();
   assert.equal(snapshot.enabled, false);
 });
 
@@ -103,4 +106,25 @@ test('542-byte cache validation does not replace a 78.7 KB image file size', asy
   assert.equal(result.networkBytes, 542);
   assert.equal(result.delivery, 'revalidated cache');
   await toggle(10);
+});
+
+test('display settings persist, update active tabs without network requests, and survive worker restart', async () => {
+  const popup = { url: 'chrome-extension://test/popup.html' };
+  const request = message => new Promise(resolve => events.message(message, popup, resolve));
+  await toggle(10);
+  const before = calls.length;
+  const response = await request({ type:'popup-setting', key:'intrinsic', value:false });
+  assert.equal(response.settings.intrinsic, false);
+  assert.equal(saved.displaySettings.intrinsic, false);
+  assert.equal(messages.findLast(m => m.type === 'settings').settings.intrinsic, false);
+  assert.equal(calls.length, before);
+  await request({ type:'popup-setting', key:'badge', value:'transfer' });
+  assert.equal(saved.displaySettings.badge, 'transfer');
+  assert.ok((await request({type:'popup-setting',key:'badge',value:'invalid'})).error);
+  assert.equal(saved.displaySettings.badge, 'transfer');
+  await toggle(10);
+  await import('../background.js?restart');
+  const state = await request({type:'popup-status',tabId:10});
+  assert.equal(state.settings.badge, 'transfer');
+  assert.equal(state.settings.intrinsic, false);
 });

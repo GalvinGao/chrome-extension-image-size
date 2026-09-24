@@ -1,10 +1,23 @@
 const monitor = document.querySelector('#monitor');
 const status = document.querySelector('#status');
 const error = document.querySelector('#error');
+const displaySettings = document.querySelector('#display-settings');
+const settingInputs = [...document.querySelectorAll('[data-setting]')];
 let tabId;
 let enabled = false;
+let savedSettings = {};
+
+function showSettings(settings) {
+  savedSettings = settings;
+  for (const input of settingInputs) {
+    if (input.dataset.setting === 'badge') input.value = settings.badge || 'file';
+    else input.checked = settings[input.dataset.setting] !== false;
+  }
+  displaySettings.disabled = false;
+}
 
 function showState(state) {
+  if (state.settings) showSettings(state.settings);
   enabled = state.enabled;
   monitor.checked = enabled;
   monitor.disabled = !!state.busy;
@@ -33,6 +46,23 @@ monitor.addEventListener('change', async () => {
     showState(await chrome.runtime.sendMessage({ type: 'popup-toggle', tabId }));
   } catch (failure) {
     showState({ enabled, error: failure.message });
+  }
+});
+
+displaySettings.addEventListener('change', async event => {
+  const input = event.target;
+  if (!input.dataset.setting) return;
+  displaySettings.disabled = true;
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'popup-setting', key: input.dataset.setting,
+      value: input.dataset.setting === 'badge' ? input.value : input.checked });
+    showSettings(response.settings);
+    error.textContent = response.error || '';
+    error.hidden = !response.error;
+  } catch (failure) {
+    showSettings(savedSettings);
+    error.textContent = failure.message;
+    error.hidden = false;
   }
 });
 

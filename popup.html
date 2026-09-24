@@ -17,6 +17,32 @@
       <span><strong>Monitor this tab</strong><span id="status" role="status" aria-live="polite">Checking status…</span></span>
       <input id="monitor" type="checkbox" role="switch" disabled aria-describedby="load-note">
     </label>
+    <fieldset id="display-settings" disabled>
+      <legend>Display</legend>
+      <label class="badge-choice">Badge value
+        <select data-setting="badge">
+          <option value="file">File size</option>
+          <option value="resource">Resource size</option>
+          <option value="transfer">Transferred bytes</option>
+        </select>
+      </label>
+      <label class="option"><input type="checkbox" data-setting="colors"> Color heavy images</label>
+      <details>
+        <summary>Hover details</summary>
+        <div class="options">
+          <label class="option"><input type="checkbox" data-setting="mime"> MIME / encoding</label>
+          <label class="option"><input type="checkbox" data-setting="resource"> Resource size</label>
+          <label class="option"><input type="checkbox" data-setting="transfer"> Transferred bytes</label>
+          <label class="option"><input type="checkbox" data-setting="intrinsic"> Intrinsic dimensions</label>
+          <label class="option"><input type="checkbox" data-setting="displayed"> Displayed dimensions</label>
+          <label class="option"><input type="checkbox" data-setting="delivery"> Cache source</label>
+          <label class="option"><input type="checkbox" data-setting="duration"> Load time / TTFB</label>
+          <label class="option"><input type="checkbox" data-setting="density"> Bytes / displayed MP</label>
+          <label class="option"><input type="checkbox" data-setting="srcset"> srcset availability</label>
+        </div>
+      </details>
+      <small>Saved for all tabs. Changes apply immediately.</small>
+    </fieldset>
     <p id="error" role="alert" hidden></p>
     <section class="notice" id="load-note">
       <h2>Enable first, then load images</h2>
@@ -28,7 +54,7 @@
       <p><strong>Badge:</strong> encoded image file bytes, excluding headers. Cache checks do not shrink this value. If HTTP compression is present, this is the compressed file size.</p>
       <p><strong>Transferred</strong> in the details is the latest request’s actual transfer cost, which may be tiny or 0 B for cached images.</p>
       <p>Hover or focus a label for dimensions, cache source, load time / TTFB, MIME type, resource size, and srcset availability.</p>
-      <p><strong>Deep orange: 3–6 MB per displayed megapixel.</strong> <strong>Red: above 6 MB per displayed megapixel.</strong> Colors are based on resource bytes and displayed CSS dimensions. This is a heuristic, not a quality score.</p>
+      <p><strong>Deep orange: 3–8 MB per displayed megapixel.</strong> <strong>Red: above 8 MB per displayed megapixel.</strong> Colors are based on resource bytes and displayed CSS dimensions. This is a heuristic, not a quality score.</p>
     </section>
   </main>
   <footer>No extra downloads. Chrome shows a debugging banner while monitoring.</footer>
