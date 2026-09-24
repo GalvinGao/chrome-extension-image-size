@@ -63,7 +63,7 @@
         mimeLine.append(mimePrefix, subtype, encoding);
         details.append(mimeLine);
         const rows = {};
-        for (const [key, caption] of [['resource', 'Resource'], ['dimensions', 'Intrinsic → displayed'], ['delivery', 'Source'], ['duration', 'Load / TTFB'], ['density', 'Bytes / megapixel'], ['srcset', 'srcset']]) {
+        for (const [key, caption] of [['resource', 'Resource'], ['transfer', 'Transferred'], ['dimensions', 'Intrinsic → displayed'], ['delivery', 'Source'], ['duration', 'Load / TTFB'], ['density', 'Bytes / megapixel'], ['srcset', 'srcset']]) {
           const row = document.createElement('span');
           row.className = 'row';
           const name = document.createElement('span');
@@ -113,7 +113,7 @@
       if (img.nextSibling !== entry.host) img.after(entry.host);
       const url = img.currentSrc || img.src;
       const result = sizes.get(canonical(url));
-      const bytes = result?.networkBytes;
+      const bytes = result?.fileBytes;
       entry.size.textContent = bytes != null ? format(bytes) : '—';
       const mime = result?.mimeType || '';
       const slash = mime.indexOf('/');
@@ -127,6 +127,7 @@
       if (heavy) entry.host.dataset.heavy = '';
       else delete entry.host.dataset.heavy;
       const time = value => value == null ? '—' : `${Math.round(value)} ms`;
+      entry.rows.transfer.value.textContent = result?.networkBytes != null ? format(result.networkBytes) : '—';
       entry.rows.resource.value.textContent = result?.bytes != null ? format(result.bytes) : '—';
       entry.rows.delivery.value.textContent = result?.delivery || '—';
       entry.rows.duration.value.textContent = `${time(result?.durationMs)} / ${time(result?.ttfbMs)}`;
@@ -142,7 +143,7 @@
         entry.host.style.setProperty('margin-left', `${Math.max(0, panelWidth + 6 - rect.right) - 2}px`, 'important');
         entry.rows.dimensions.value.textContent = `${img.naturalWidth}×${img.naturalHeight} → ${Math.round(rect.width)}×${Math.round(rect.height)}`;
       }
-      entry.host.setAttribute('aria-label', `Image network size ${entry.size.textContent}${heavy ? ', high bytes per megapixel' : ''}. Focus for details.`);
+      entry.host.setAttribute('aria-label', `Image file size ${entry.size.textContent}${heavy ? ', high bytes per megapixel' : ''}. Focus for details.`);
       const visible = img.naturalWidth > 0;
       entry.host.style.setProperty('display', visible ? 'block' : 'none', 'important');
       // z-index cannot escape an ancestor stacking context; the top layer can.

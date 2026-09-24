@@ -31,7 +31,7 @@ export function responseMetadata(response) {
 
 export function requestMetrics(request, finishedAt) {
   const response = request.response;
-  const delivery = response.fromServiceWorker ? 'service worker' : response.fromPrefetchCache ? 'prefetch cache' :
+  const delivery = request.actualStatus === 304 ? 'revalidated cache' : response.fromServiceWorker ? 'service worker' : response.fromPrefetchCache ? 'prefetch cache' :
     response.fromDiskCache ? 'disk cache' : request.cached ? 'memory cache' : 'network';
   const start = request.startedAt;
   const elapsed = Number.isFinite(start) && Number.isFinite(finishedAt) ? (finishedAt - start) * 1000 : null;
@@ -44,4 +44,13 @@ export function requestMetrics(request, finishedAt) {
     durationMs: elapsed !== null && elapsed >= 0 ? elapsed : null,
     ttfbMs: firstByte !== null && firstByte >= 0 ? firstByte : null,
   };
+}
+
+export function encodedFileSize(response, resourceBytes, encodedChunks) {
+  if (response.status === 206 || response.status < 200 || response.status >= 400) return null;
+  const length = String(header(response.headers, 'content-length') ?? '').trim();
+  if (response.status === 200 && /^\d+$/.test(length) && Number.isSafeInteger(Number(length))) return Number(length);
+  if (!responseMetadata(response).contentEncoding) return resourceBytes;
+  // Never substitute transferred bytes: they may describe only a cache validation.
+  return encodedChunks > 0 ? encodedChunks : null;
 }

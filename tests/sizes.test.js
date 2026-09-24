@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bodySize, headerSize, canonicalURL, responseMetadata, requestMetrics } from '../sizes.js';
+import { bodySize, headerSize, canonicalURL, responseMetadata, requestMetrics, encodedFileSize } from '../sizes.js';
 
 test('file byte counts from base64 padding and Unicode text', () => {
   for (const text of ['a', 'ab', 'abc', '猫', '<svg>猫</svg>']) {
@@ -41,4 +41,13 @@ test('load duration and TTFB share the monotonic clock; cache source stays disti
   assert.equal(requestMetrics({ response: {}, cached: true }, undefined).delivery, 'memory cache');
   assert.equal(requestMetrics({ response: {} }, undefined).durationMs, null);
   assert.equal(requestMetrics({ startedAt: 10, response: { timing: { requestTime: 10, receiveHeadersStart: -1 } } }, 11).ttfbMs, null);
+});
+
+test('file size stays independent of cache validation traffic and HTTP compression', () => {
+  assert.equal(encodedFileSize({status:200, headers:{'Content-Length':'78700'}}, 78700, 0), 78700);
+  assert.equal(encodedFileSize({status:200, headers:{}}, 78700, 0), 78700);
+  assert.equal(encodedFileSize({status:200, headers:{'Content-Encoding':'gzip','Content-Length':'12000'}}, 78700, 0), 12000);
+  assert.equal(encodedFileSize({status:200, headers:{'Content-Encoding':'gzip'}}, 78700, 12000), 12000);
+  assert.equal(encodedFileSize({status:200, headers:{'Content-Encoding':'gzip'}}, 78700, 0), null);
+  assert.equal(encodedFileSize({status:206, headers:{'Content-Length':'542'}}, null, 542), null);
 });

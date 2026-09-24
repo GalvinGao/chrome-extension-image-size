@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 
-test('network-only badge expands details, flags density, updates dimensions and cleans up', async () => {
+test('file-size badge expands details, flags density, updates dimensions and cleans up', async () => {
   const element = () => ({
     style: { setProperty(k, v) { this[k] = v; }, getPropertyValue(k) { return this[k] || ''; }, getPropertyPriority() { return ''; }, removeProperty(k) { delete this[k]; } },
     children: [], dataset: {}, attrs: {}, events: {},
@@ -36,14 +36,14 @@ test('network-only badge expands details, flags density, updates dimensions and 
   });
   vm.runInContext(await readFile(new URL('../content.js', import.meta.url), 'utf8'), context);
   await new Promise(resolve => setImmediate(resolve));
-  const result = { bytes: 30000, networkBytes: 0, delivery: 'disk cache', durationMs: 12, ttfbMs: null, mimeType: 'image/jpeg', contentEncoding: 'gzip' };
+  const result = { bytes: 30000, fileBytes: 30000, networkBytes: 0, delivery: 'disk cache', durationMs: 12, ttfbMs: null, mimeType: 'image/jpeg', contentEncoding: 'gzip' };
   onMessage({ type: 'state', enabled: true });
   onMessage({ type: 'sizes', results: [[img.src, result]] });
   frames.shift()();
   const host = img.nextSibling;
   const [label, style] = host.shadow.children;
   const [size, details] = label.children;
-  assert.equal(size.textContent, '0 B');
+  assert.equal(size.textContent, '30.0 KB');
   assert.equal(host.popover, 'manual');
   assert.equal(host.open, true);
   assert.ok('heavy' in host.dataset);
@@ -57,22 +57,23 @@ test('network-only badge expands details, flags density, updates dimensions and 
   assert.equal(details.children[0].children[0].textContent, 'image/');
   assert.equal(details.children[0].children[2].textContent, ' + gzip');
   assert.equal(details.children[1].children[1].textContent, '30.0 KB');
-  assert.equal(details.children[2].children[1].textContent, '200×100 → 100×50');
-  assert.equal(details.children[3].children[1].textContent, 'disk cache');
-  assert.equal(details.children[4].children[1].textContent, '12 ms / —');
-  assert.equal(details.children[5].children[1].textContent, '1.50 MB / MP · high');
-  assert.equal(details.children[6].hidden, true);
+  assert.equal(details.children[2].children[1].textContent, '0 B');
+  assert.equal(details.children[3].children[1].textContent, '200×100 → 100×50');
+  assert.equal(details.children[4].children[1].textContent, 'disk cache');
+  assert.equal(details.children[5].children[1].textContent, '12 ms / —');
+  assert.equal(details.children[6].children[1].textContent, '1.50 MB / MP · high');
+  assert.equal(details.children[7].hidden, true);
   img.srcset = 'a 1x, b 2x';
   displayWidth = 80;
   resized(); frames.shift()();
-  assert.equal(details.children[6].hidden, false);
-  assert.equal(details.children[6].children[1].textContent, 'YES');
-  assert.equal(details.children[2].children[1].textContent, '200×100 → 80×50');
+  assert.equal(details.children[7].hidden, false);
+  assert.equal(details.children[7].children[1].textContent, 'YES');
+  assert.equal(details.children[3].children[1].textContent, '200×100 → 80×50');
   img.srcset = '';
   picture = { querySelectorAll: () => [{ getAttribute: () => 'a 2x' }] };
   onMessage({ type: 'sizes', results: [[img.src, { ...result, bytes: 20000 }]] }); frames.shift()();
   assert.equal('heavy' in host.dataset, false, 'Exactly the threshold is not high');
-  assert.equal(details.children[6].hidden, false);
+  assert.equal(details.children[7].hidden, false);
   host.events.pointerleave();
   assert.equal('expanded' in host.dataset, false);
   host.events.focusin(); frames.shift()();

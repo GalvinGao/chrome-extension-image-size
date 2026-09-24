@@ -88,3 +88,19 @@ test('responses for requests started before enabling are ignored', async () => {
   assert.equal(messages.filter(m => m.type === 'sizes').length, count);
   await toggle(10);
 });
+
+test('542-byte cache validation does not replace a 78.7 KB image file size', async () => {
+  await toggle(10);
+  event('Network.requestWillBeSent', {requestId:'validation', timestamp:1, request:{url:'https://a/image.webp'}});
+  event('Network.responseReceivedExtraInfo', {requestId:'validation', statusCode:304});
+  event('Network.responseReceived', {requestId:'validation', type:'Image', response:{url:'https://a/image.webp',status:200,mimeType:'image/webp',headers:{'Content-Length':'78700'}}});
+  event('Network.dataReceived', {requestId:'validation',dataLength:78700,encodedDataLength:0});
+  event('Network.loadingFinished', {requestId:'validation', timestamp:2, encodedDataLength:542});
+  await settle();
+  const result = messages.findLast(message => message.type === 'sizes').results[0][1];
+  assert.equal(result.fileBytes, 78700);
+  assert.equal(result.bytes, 78700);
+  assert.equal(result.networkBytes, 542);
+  assert.equal(result.delivery, 'revalidated cache');
+  await toggle(10);
+});

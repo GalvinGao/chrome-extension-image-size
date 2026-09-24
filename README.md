@@ -6,7 +6,7 @@ A Chrome extension that shows tiny **B / KB / MB** labels at the top-right of im
 
 ![Image File Size showing file-size labels on a video thumbnail and avatar](docs/example.png)
 
-The screenshot shows the size labels. Current labels show network size only until hovered or focused. Expanded details include the MIME type, for example `image/jpeg + gzip`, with `image/` muted.
+The screenshot shows the size labels. Current labels show encoded file size only until hovered or focused. Expanded details include the MIME type, for example `image/jpeg + gzip`, with `image/` muted.
 
 ## Install
 
@@ -25,7 +25,7 @@ Keep the extracted folder; Chrome loads the extension from it.
 1. Open a webpage and click the extension icon, or press **Alt+Shift+I**, to open the popup.
 2. Turn on **Monitor this tab**. The **ON** badge means monitoring is active.
 3. **Only images loaded AFTER monitoring is enabled can show their size.** Reload the page after enabling it to capture existing images.
-4. Hover or keyboard-focus a label to expand the image details. The collapsed label shows **network size only**.
+4. Hover or keyboard-focus a label to expand the image details. The collapsed label shows **encoded file size only**.
 5. Turn the popup switch off to hide the labels and stop monitoring.
 
 Chrome shows a debugging banner while the extension monitors image requests. This is expected. If you used the earlier userscript, disable it to avoid duplicate labels and downloads.
@@ -34,13 +34,14 @@ A **—** label means the size is unavailable. Some cached images, partial respo
 
 ## What size is shown?
 
-The collapsed label shows **Network size**: Chrome’s reported response transfer bytes, including response headers and the compressed body. Cached loads can show **0 B**. Missing measurements show **—**. No extra requests are made.
+The collapsed label shows **encoded image file size**, excluding response headers. It uses the full response Content-Length when available, resource bytes when there is no HTTP compression, or observed encoded body bytes. Cache validation traffic is never used as the file size. Unavailable measurements show **—**. No extra requests are made.
 
 Hover or keyboard-focus the label for:
 
+- Transferred bytes for the latest request, including headers. Cache checks may transfer only a few hundred bytes, and cache hits may transfer 0 B.
 - Resource bytes after HTTP decompression (image-format compression remains intact).
 - Intrinsic → displayed dimensions (browser-reported natural dimensions → rendered CSS pixels).
-- Source: network, memory cache, disk cache, prefetch cache, or service worker, when reported by Chrome.
+- Source: network, memory cache, disk cache, revalidated cache, prefetch cache, or service worker, when reported by Chrome.
 - Load duration / TTFB in milliseconds for the final request after redirects. TTFB is unavailable when Chrome does not expose first-byte timing, including cached responses.
 - Resource bytes per megapixel of intrinsic dimensions.
 - `srcset YES` only when the image or its `<picture>` sources have a nonempty srcset.

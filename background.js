@@ -1,4 +1,4 @@
-import { headerSize, bodySize, canonicalURL, responseMetadata, requestMetrics } from './sizes.js';
+import { headerSize, bodySize, canonicalURL, responseMetadata, requestMetrics, encodedFileSize } from './sizes.js';
 
 const tabs = new Map();
 const busy = new Set();
@@ -106,9 +106,12 @@ async function onEvent(source, method, params) {
     const previous = state.requests.get(key);
     const urls = previous && params.redirectResponse ? previous.urls : [];
     urls.push(params.request.url);
-    state.requests.set(key, { urls, bytes: 0, chunks: false, startedAt: params.timestamp });
+    state.requests.set(key, { urls, bytes: 0, chunks: false, encodedChunks: 0, startedAt: params.timestamp });
     // Ignore unbounded streaming requests; responseReceived still creates image records.
     if (state.requests.size > 5000) state.requests.delete(state.requests.keys().next().value);
+  } else if (method === 'Network.responseReceivedExtraInfo') {
+    const request = state.requests.get(key);
+    if (request) request.actualStatus = params.statusCode;
   } else if (method === 'Network.requestServedFromCache') {
     const request = state.requests.get(key);
     if (request) request.cached = true;
@@ -126,7 +129,8 @@ async function onEvent(source, method, params) {
     state.requests.set(key, request);
   } else if (method === 'Network.dataReceived') {
     const request = state.requests.get(key);
-    if (request) { request.bytes += params.dataLength; request.chunks = true; }
+    if (request) { request.bytes += params.dataLength; request.chunks = true;
+      if (params.encodedDataLength > 0) request.encodedChunks += params.encodedDataLength; }
   } else if (method === 'Network.loadingFailed') {
     const request = state.requests.get(key);
     state.requests.delete(key);
@@ -152,7 +156,7 @@ async function onEvent(source, method, params) {
         } catch { /* Evicted/cached bodies may no longer be accessible. */ }
       }
     } else reason = `HTTP ${response.status}`;
-    if (state.revision === revision) record(tabId, state, request.urls, { bytes, networkBytes, ...requestMetrics(request, params.timestamp), reason, ...responseMetadata(response) });
+    if (state.revision === revision) record(tabId, state, request.urls, { bytes, fileBytes: encodedFileSize(response, bytes, request.encodedChunks), networkBytes, ...requestMetrics(request, params.timestamp), reason, ...responseMetadata(response) });
   }
 }
 chrome.debugger.onEvent.addListener((source, method, params) => {
