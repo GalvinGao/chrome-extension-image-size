@@ -2,11 +2,15 @@
 
 A Chrome extension that shows tiny **B / KB / MB** labels at the top-right of images. It measures the page's existing image requests without downloading images again.
 
-## Example
+## Examples
 
-![Image File Size showing file-size labels on a video thumbnail and avatar](docs/example.png)
+A compact label shows the image file size:
 
-The screenshot shows the size labels. Current labels show encoded file size only until hovered or focused. Expanded details include the MIME type, for example `image/jpeg + gzip`, with `image/` muted.
+![Collapsed image file-size label](docs/example-collapsed.png)
+
+Hover or focus the label to expand the details:
+
+![Expanded image file-size details](docs/example-expanded.png)
 
 ## Install
 
