@@ -28,3 +28,20 @@ export function responseMetadata(response) {
     .filter(value => value && value !== 'identity').join(', ');
   return { mimeType, contentEncoding };
 }
+
+export function requestMetrics(request, finishedAt) {
+  const response = request.response;
+  const delivery = response.fromServiceWorker ? 'service worker' : response.fromPrefetchCache ? 'prefetch cache' :
+    response.fromDiskCache ? 'disk cache' : request.cached ? 'memory cache' : 'network';
+  const start = request.startedAt;
+  const elapsed = Number.isFinite(start) && Number.isFinite(finishedAt) ? (finishedAt - start) * 1000 : null;
+  const timing = response.timing;
+  const firstByte = delivery === 'network' && Number.isFinite(start) && Number.isFinite(timing?.requestTime) &&
+    Number.isFinite(timing?.receiveHeadersStart) && timing.receiveHeadersStart >= 0 ?
+    (timing.requestTime - start) * 1000 + timing.receiveHeadersStart : null;
+  return {
+    delivery,
+    durationMs: elapsed !== null && elapsed >= 0 ? elapsed : null,
+    ttfbMs: firstByte !== null && firstByte >= 0 ? firstByte : null,
+  };
+}

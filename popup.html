@@ -17,23 +17,17 @@
       <span><strong>Monitor this tab</strong><span id="status" role="status" aria-live="polite">Checking status…</span></span>
       <input id="monitor" type="checkbox" role="switch" disabled aria-describedby="load-note">
     </label>
-    <label class="size-control" for="size-mode">
-      <span>Label size</span>
-      <select id="size-mode" disabled aria-describedby="size-help">
-        <option value="resource">Resource</option>
-        <option value="network">Network</option>
-      </select>
-    </label>
     <p id="error" role="alert" hidden></p>
     <section class="notice" id="load-note">
       <h2>Enable first, then load images</h2>
       <p>Sizes are available only for images loaded <strong>AFTER monitoring is enabled</strong>. Reload this page after enabling to capture existing images.</p>
     </section>
     <section class="size-note" id="size-help">
-      <h2>Which size am I seeing?</h2>
+      <h2>Network size at a glance</h2>
       <p><strong>Resource:</strong> file bytes after HTTP decompression. JPEG, PNG, and WebP compression stays intact.</p>
       <p><strong>Network:</strong> Chrome’s reported response transfer bytes, including headers and the compressed body. Cached loads can transfer 0 B.</p>
-      <p>Switching updates captured labels immediately, without downloading again. Unavailable measurements show —.</p>
+      <p>Hover or focus a label for dimensions, cache source, load time / TTFB, MIME type, resource size, and srcset availability.</p>
+      <p>A red label means more than <strong>1 MB per megapixel</strong>, based on resource bytes and intrinsic dimensions. This is a heuristic, not a quality score.</p>
     </section>
   </main>
   <footer>No extra downloads. Chrome shows a debugging banner while monitoring.</footer>

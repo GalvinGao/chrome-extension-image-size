@@ -1,4 +1,4 @@
-import { headerSize, bodySize, canonicalURL, responseMetadata } from './sizes.js';
+import { headerSize, bodySize, canonicalURL, responseMetadata, requestMetrics } from './sizes.js';
 
 const tabs = new Map();
 const busy = new Set();
@@ -37,13 +37,13 @@ export async function toggle(tabId) {
     if (tabs.has(tabId)) { await stop(tabId); return { enabled: false }; }
     await chrome.debugger.attach({ tabId }, '1.3');
     attached = true;
-    tabs.set(tabId, { requests: new Map(), results: new Map(), revision: 0, mode: 'resource' });
+    tabs.set(tabId, { requests: new Map(), results: new Map(), revision: 0 });
     await configure({ tabId });
     // Covers pages opened before installation. The content script is idempotent.
     await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['content.js'] });
-    await publish(tabId, { type: 'state', enabled: true, mode: 'resource' });
+    await publish(tabId, { type: 'state', enabled: true });
     await badge(tabId, 'ON', 'Image File Size — monitoring this tab');
-    return { enabled: true, mode: 'resource' };
+    return { enabled: true };
   } catch (error) {
     if (attached) await stop(tabId);
     await badge(tabId, '!', `Cannot monitor this tab: ${error.message}`);
@@ -58,20 +58,11 @@ chrome.debugger.onDetach.addListener(source => { if (source.tabId !== undefined)
 chrome.tabs.onRemoved.addListener(tabId => { tabs.delete(tabId); });
 
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
-  if (message.type === 'popup-status' || message.type === 'popup-toggle' || message.type === 'popup-mode') {
+  if (message.type === 'popup-status' || message.type === 'popup-toggle') {
     // Only the extension popup can attach a debugger to an explicitly selected tab.
     if (sender.url !== chrome.runtime.getURL('popup.html') || !Number.isInteger(message.tabId)) return;
-    if (message.type === 'popup-mode') {
-      const state = tabs.get(message.tabId);
-      if (!state || !['resource', 'network'].includes(message.mode)) {
-        reply({ enabled: !!state, mode: state?.mode || 'resource', error: 'Enable monitoring before choosing a size.' });
-        return;
-      }
-      state.mode = message.mode;
-      void publish(message.tabId, { type: 'mode', mode: state.mode });
-      reply({ enabled: true, mode: state.mode });
-    } else if (message.type === 'popup-status') {
-      reply({ enabled: tabs.has(message.tabId), busy: busy.has(message.tabId), mode: tabs.get(message.tabId)?.mode || 'resource' });
+    if (message.type === 'popup-status') {
+      reply({ enabled: tabs.has(message.tabId), busy: busy.has(message.tabId) });
     } else {
       toggle(message.tabId).then(reply, error => reply({ enabled: tabs.has(message.tabId), error: error.message }));
       return true;
@@ -80,7 +71,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
   }
   if (message.type !== 'snapshot') return;
   const state = tabs.get(sender.tab?.id);
-  reply({ enabled: !!state, mode: state?.mode || 'resource', results: state ? [...state.results] : [] });
+  reply({ enabled: !!state, results: state ? [...state.results] : [] });
 });
 
 function record(tabId, state, urls, value) {
@@ -115,7 +106,7 @@ async function onEvent(source, method, params) {
     const previous = state.requests.get(key);
     const urls = previous && params.redirectResponse ? previous.urls : [];
     urls.push(params.request.url);
-    state.requests.set(key, { urls, bytes: 0, chunks: false });
+    state.requests.set(key, { urls, bytes: 0, chunks: false, startedAt: params.timestamp });
     // Ignore unbounded streaming requests; responseReceived still creates image records.
     if (state.requests.size > 5000) state.requests.delete(state.requests.keys().next().value);
   } else if (method === 'Network.requestServedFromCache') {
@@ -147,8 +138,6 @@ async function onEvent(source, method, params) {
     const revision = state.revision;
     const response = request.response;
     const networkBytes = Number.isFinite(params.encodedDataLength) && params.encodedDataLength >= 0 ? params.encodedDataLength : null;
-    const delivery = response.fromServiceWorker ? 'service worker' :
-      request.cached || response.fromDiskCache || response.fromPrefetchCache ? 'cache' : 'network';
     let bytes = null;
     let reason = 'Response size unavailable; no extra request was made';
     if (response.status === 206) {
@@ -163,7 +152,7 @@ async function onEvent(source, method, params) {
         } catch { /* Evicted/cached bodies may no longer be accessible. */ }
       }
     } else reason = `HTTP ${response.status}`;
-    if (state.revision === revision) record(tabId, state, request.urls, { bytes, networkBytes, delivery, reason, ...responseMetadata(response) });
+    if (state.revision === revision) record(tabId, state, request.urls, { bytes, networkBytes, ...requestMetrics(request, params.timestamp), reason, ...responseMetadata(response) });
   }
 }
 chrome.debugger.onEvent.addListener((source, method, params) => {

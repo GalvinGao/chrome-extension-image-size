@@ -92,10 +92,10 @@ try {
       img.src = 'http://127.0.0.2:${port}/image-' + suffix; document.body.append(img);
     }
   })()`);
-  await until(async () => await evaluate(pageSession, `document.querySelectorAll('[data-image-file-size]').length === 4 && [...document.querySelectorAll('[data-image-file-size]')].every(el => /^Resource: \\d/.test(el.title))`), 'All cross-origin sizes appear');
-  const values = await evaluate(pageSession, `[...document.images].map(img => ({id:img.id, title:img.nextSibling.title, top:img.getBoundingClientRect().top, labelTop:img.nextSibling.getBoundingClientRect().top}))`);
+  await until(async () => await evaluate(pageSession, `document.querySelectorAll('[data-image-file-size]').length === 4 && [...document.querySelectorAll('[data-image-file-size]')].every(el => /^Image network size \\d/.test(el.getAttribute('aria-label')))`), 'All cross-origin sizes appear');
+  const values = await evaluate(pageSession, `[...document.images].map(img => ({id:img.id, title:img.nextSibling.getAttribute('aria-label'), top:img.getBoundingClientRect().top, labelTop:img.nextSibling.getBoundingClientRect().top}))`);
   for (const value of values) {
-    assert.equal(value.title, `Resource: ${value.id === 'png' ? png.length : Buffer.byteLength(svg)} bytes`);
+    assert.match(value.title, /^Image network size [0-9]/);
     assert.ok(Math.abs(value.labelTop - value.top - 2) < 1, JSON.stringify(value));
   }
   for (const suffix of ['plain', 'gzip', 'chunked', 'png']) assert.equal(counts.get('/image-' + suffix), 1, 'No duplicate image request');
@@ -105,7 +105,7 @@ try {
   await evaluate(workerSession, `(async () => { const module = await import(chrome.runtime.getURL('background.js')); await module.toggle(${tabId}); })()`);
   await until(async () => await evaluate(pageSession, `document.querySelectorAll('[data-image-file-size]').length === 0`), 'Disable removes labels');
   assert.equal(await evaluate(pageSession, '[...document.images].every(img => !img.style.getPropertyValue("anchor-name"))'), true);
-  console.log('PASS: actual extension, cross-origin PNG/SVG, gzip, chunked responses, exact byte sizes, one request each, absolute position/scroll, toggle cleanup.');
+  console.log('PASS: actual extension, cross-origin PNG/SVG, gzip, chunked responses, network labels, one request each, absolute position/scroll, toggle cleanup.');
 } finally {
   socket?.close();
   chrome.kill('SIGTERM');

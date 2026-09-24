@@ -6,7 +6,7 @@ A Chrome extension that shows tiny **B / KB / MB** labels at the top-right of im
 
 ![Image File Size showing file-size labels on a video thumbnail and avatar](docs/example.png)
 
-The screenshot shows the size labels. Current labels also show the MIME type below the size when available, for example `image/jpeg + gzip`, with `image/` muted.
+The screenshot shows the size labels. Current labels show network size only until hovered or focused. Expanded details include the MIME type, for example `image/jpeg + gzip`, with `image/` muted.
 
 ## Install
 
@@ -25,7 +25,7 @@ Keep the extracted folder; Chrome loads the extension from it.
 1. Open a webpage and click the extension icon, or press **Alt+Shift+I**, to open the popup.
 2. Turn on **Monitor this tab**. The **ON** badge means monitoring is active.
 3. **Only images loaded AFTER monitoring is enabled can show their size.** Reload the page after enabling it to capture existing images.
-4. Choose **Resource** or **Network** under **Label size**. Switching updates captured labels immediately without another request. The choice lasts for the monitoring session.
+4. Hover or keyboard-focus a label to expand the image details. The collapsed label shows **network size only**.
 5. Turn the popup switch off to hide the labels and stop monitoring.
 
 Chrome shows a debugging banner while the extension monitors image requests. This is expected. If you used the earlier userscript, disable it to avoid duplicate labels and downloads.
@@ -34,14 +34,22 @@ A **—** label means the size is unavailable. Some cached images, partial respo
 
 ## What size is shown?
 
-Choose the measurement in the popup:
+The collapsed label shows **Network size**: Chrome’s reported response transfer bytes, including response headers and the compressed body. Cached loads can show **0 B**. Missing measurements show **—**. No extra requests are made.
 
-- **Resource** (default): file bytes after HTTP decompression (gzip/Brotli). Image-format compression remains intact; this is not decoded bitmap memory.
-- **Network**: Chrome’s reported response transfer size (`Network.loadingFinished.encodedDataLength`), including response headers and the compressed body. It is not a packet-level bandwidth measurement and excludes request upload and TLS/TCP overhead. This is the final response's size, not the sum of redirect responses.
+Hover or keyboard-focus the label for:
 
-Cached loads can report **0 B** transferred while their resource size is nonzero. Service-worker responses describe the observed image request, not every underlying fetch made by the worker. Missing transfer measurements show **—**, never a guessed resource size. Units are decimal B / KB / MB. Both measurements come from the original load; switching requires no new requests.
+- Resource bytes after HTTP decompression (image-format compression remains intact).
+- Intrinsic → displayed dimensions (browser-reported natural dimensions → rendered CSS pixels).
+- Source: network, memory cache, disk cache, prefetch cache, or service worker, when reported by Chrome.
+- Load duration / TTFB in milliseconds for the final request after redirects. TTFB is unavailable when Chrome does not expose first-byte timing, including cached responses.
+- Resource bytes per megapixel of intrinsic dimensions.
+- `srcset YES` only when the image or its `<picture>` sources have a nonempty srcset.
 
-The second line shows the MIME type, right-aligned, with its prefix (such as `image/`) in gray. A suffix such as `+ gzip` or `+ br` appears only when the response has a non-identity **Content-Encoding**. **Transfer-Encoding** describes HTTP message transport (for example, chunking), so it is not displayed as image compression.
+**Red labels mean more than 1 MB per megapixel** (decimal units), using resource bytes so caching and HTTP compression do not hide heavy images. This is a heuristic, not a quality score: small icons, transparency, and animated files can legitimately score high. The expanded label includes the numeric density and threshold explanation. Press Escape to collapse it.
+
+The size excludes request uploads and TLS/TCP overhead. Service-worker measurements describe the observed image request, not every underlying fetch. Network and resource sizes are both retained from the original load.
+
+The expanded label shows the MIME type, right-aligned, with its prefix (such as `image/`) in gray. A suffix such as `+ gzip` or `+ br` appears only when the response has a non-identity **Content-Encoding**. **Transfer-Encoding** describes HTTP message transport (for example, chunking), so it is not displayed as image compression.
 
 Extra HTTP compression on already-compressed formats such as JPEG is often unnecessary; the suffix makes it visible. Compression is still useful for text-based formats such as SVG.
 

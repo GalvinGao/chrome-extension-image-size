@@ -67,12 +67,6 @@ test('popup control returns real state and rejects content-script control messag
   assert.equal((await request({ type: 'popup-status', tabId: 20 })).enabled, false);
   assert.equal((await request({ type: 'popup-toggle', tabId: 20 })).enabled, true);
   assert.equal((await request({ type: 'popup-status', tabId: 20 })).enabled, true);
-  const commandsBeforeMode = calls.length;
-  assert.equal((await request({ type: 'popup-mode', tabId: 20, mode: 'network' })).mode, 'network');
-  assert.equal((await request({ type: 'popup-status', tabId: 20 })).mode, 'network');
-  assert.equal(messages.findLast(m => m.type === 'mode').mode, 'network');
-  assert.equal(calls.length, commandsBeforeMode, 'Changing modes sends no debugger requests');
-  assert.ok((await request({ type: 'popup-mode', tabId: 20, mode: 'invalid' })).error);
   let replied = false;
   events.message({ type: 'popup-toggle', tabId: 20 }, { url: 'https://example.com' }, () => { replied = true; });
   assert.equal(replied, false);
