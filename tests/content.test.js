@@ -5,8 +5,12 @@ import { readFile } from 'node:fs/promises';
 
 test('image label renders MIME below size, with muted prefix and optional encoding', async () => {
   const element = () => ({
-    style: { setProperty(k, v) { this[k] = v; }, getPropertyValue(k) { return this[k] || ''; }, getPropertyPriority() { return ''; } },
+    style: { setProperty(k, v) { this[k] = v; }, getPropertyValue(k) { return this[k] || ''; }, getPropertyPriority() { return ''; }, removeProperty(k) { delete this[k]; } },
     children: [], dataset: {}, setAttribute() {},
+    matches(selector) { return selector === ':popover-open' && !!this.open; },
+    showPopover() { this.open = true; this.shows = (this.shows || 0) + 1; },
+    hidePopover() { this.open = false; },
+    remove() { this.removed = true; this.open = false; },
     append(...nodes) { this.children.push(...nodes); },
     attachShadow() { this.shadow = element(); return this.shadow; },
   });
@@ -18,6 +22,7 @@ test('image label renders MIME below size, with muted prefix and optional encodi
     window: { addEventListener() {} },
     MutationObserver: class { observe() {} disconnect() {} },
     getComputedStyle: () => ({ getPropertyValue: () => 'none' }),
+    cancelAnimationFrame() {},
     requestAnimationFrame(fn) { frames.push(fn); return frames.length; },
     chrome: { runtime: { onMessage: { addListener(fn) { onMessage = fn; } }, sendMessage: async () => ({ enabled: false }) } },
   });
@@ -28,6 +33,11 @@ test('image label renders MIME below size, with muted prefix and optional encodi
   frames.shift()();
   const label = img.nextSibling.shadow.children[0];
   assert.equal(label.children[0].textContent, '14.7 KB');
+  assert.equal(img.nextSibling.popover, 'manual');
+  assert.equal(img.nextSibling.open, true);
+  assert.match(img.nextSibling.style.cssText, /position:absolute!important/);
+  assert.match(img.nextSibling.style.cssText, /pointer-events:none!important/);
+  assert.match(img.nextSibling.shadow.children[1].textContent, /pointer-events: none !important/);
   const details = label.children[1];
   assert.equal(details.children[0].textContent, 'image/');
   assert.equal(details.children[0].style.color, '#a5a5a5');
@@ -53,4 +63,16 @@ test('image label renders MIME below size, with muted prefix and optional encodi
   onMessage({ type: 'sizes', results: [[img.src, { bytes: 4000 }]] });
   frames.shift()();
   assert.equal(details.style.display, 'none');
+  assert.equal(img.nextSibling.shows, 1, 'Rendering updates do not reopen the popover');
+  img.naturalWidth = 0;
+  onMessage({ type: 'reset' });
+  frames.shift()();
+  assert.equal(img.nextSibling.open, false);
+  img.naturalWidth = 200;
+  onMessage({ type: 'reset' });
+  frames.shift()();
+  assert.equal(img.nextSibling.open, true);
+  onMessage({ type: 'state', enabled: false });
+  assert.equal(img.nextSibling.open, false);
+  assert.equal(img.nextSibling.removed, true);
 });

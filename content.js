@@ -43,6 +43,7 @@
         const host = document.createElement('span');
         host.dataset.imageFileSize = '';
         host.setAttribute('aria-hidden', 'true');
+        host.popover = 'manual';
         host.style.cssText = `all:initial!important;position:absolute!important;position-anchor:${name}!important;top:anchor(top)!important;left:anchor(right)!important;transform:translateX(-100%)!important;margin:2px 0 0 -2px!important;padding:0!important;border:0!important;pointer-events:none!important;z-index:2147483647!important;position-visibility:anchors-visible!important;`;
         const root = host.attachShadow({ mode: 'closed' });
         const label = document.createElement('span');
@@ -57,7 +58,9 @@
         const encoding = document.createElement('span');
         details.append(mimePrefix, subtype, encoding);
         label.append(size, details);
-        root.append(label);
+        const backdropStyle = document.createElement('style');
+        backdropStyle.textContent = ':host::backdrop { background: transparent !important; pointer-events: none !important; }';
+        root.append(label, backdropStyle);
         entry = { host, size, details, prefix: mimePrefix, subtype, encoding, original, priority, assigned };
         entries.set(img, entry);
       }
@@ -75,7 +78,12 @@
       entry.host.title = bytes != null ?
         `${mode === 'network' ? 'Network transfer' : 'Resource'}: ${bytes.toLocaleString()} bytes${mode === 'network' && result.delivery ? ` (${result.delivery})` : ''}` :
         mode === 'network' && result ? 'Network transfer size unavailable' : result?.reason || 'Not captured. Reload with monitoring enabled to capture image requests.';
-      entry.host.style.setProperty('display', img.naturalWidth ? 'block' : 'none', 'important');
+      const visible = img.naturalWidth > 0;
+      entry.host.style.setProperty('display', visible ? 'block' : 'none', 'important');
+      // z-index cannot escape an ancestor stacking context; the top layer can.
+      // CSS anchors still handle positioning and scrolling without measurements.
+      if (visible && !entry.host.matches(':popover-open')) entry.host.showPopover();
+      else if (!visible && entry.host.matches(':popover-open')) entry.host.hidePopover();
     }
     observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['src', 'srcset', 'sizes'] });
   }

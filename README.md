@@ -30,7 +30,7 @@ Keep the extracted folder; Chrome loads the extension from it.
 
 Chrome shows a debugging banner while the extension monitors image requests. This is expected. If you used the earlier userscript, disable it to avoid duplicate labels and downloads.
 
-A **—** label means the size is unavailable. Some cached images, partial responses, CSS backgrounds, and images inside shadow roots are not supported. Labels may be clipped by the page's layout. Chrome's internal pages cannot be monitored; hover over an **!** badge for the error.
+A **—** label means the size is unavailable. Some cached images, partial responses, CSS backgrounds, and images inside shadow roots are not supported. Labels use the browser’s top layer to stay above ordinary page overlays, while CSS anchors keep them attached to each image. Labels inside a frame remain within that frame. Chrome's internal pages cannot be monitored; hover over an **!** badge for the error.
 
 ## What size is shown?
 
