@@ -48,10 +48,10 @@ Hover or keyboard-focus the label for:
 - Displayed dimensions (rendered CSS pixels), on a separate row.
 - Source: network, memory cache, disk cache, revalidated cache, prefetch cache, or service worker, when reported by Chrome.
 - Load duration / TTFB in milliseconds for the final request after redirects. TTFB is unavailable when Chrome does not expose first-byte timing, including cached responses.
-- Resource bytes per megapixel of intrinsic dimensions.
+- Resource bytes per displayed megapixel: resource bytes ÷ (displayed CSS width × height) × 1,000,000. This updates when the displayed size changes.
 - `srcset YES` only when the image or its `<picture>` sources have a nonempty srcset.
 
-**Red labels mean more than 1 MB per megapixel** (decimal units), using resource bytes so caching and HTTP compression do not hide heavy images. This is a heuristic, not a quality score: small icons, transparency, and animated files can legitimately score high. The expanded label includes the numeric density and threshold explanation. Press Escape to collapse it.
+**Red labels mean more than 1 MB per displayed megapixel** (decimal units), using resource bytes so caching and HTTP compression do not hide heavy images. This is a heuristic, not a quality score: small icons, transparency, and animated files can legitimately score high. The expanded label includes the numeric density and threshold explanation. Press Escape to collapse it.
 
 The size excludes request uploads and TLS/TCP overhead. Service-worker measurements describe the observed image request, not every underlying fetch. Network and resource sizes are both retained from the original load.
 

@@ -63,7 +63,7 @@
         mimeLine.append(mimePrefix, subtype, encoding);
         details.append(mimeLine);
         const rows = {};
-        for (const [key, caption] of [['resource', 'Resource'], ['transfer', 'Transferred'], ['intrinsic', 'Intrinsic'], ['displayed', 'Displayed'], ['delivery', 'Source'], ['duration', 'Load / TTFB'], ['density', 'Bytes / megapixel'], ['srcset', 'srcset']]) {
+        for (const [key, caption] of [['resource', 'Resource'], ['transfer', 'Transferred'], ['intrinsic', 'Intrinsic'], ['displayed', 'Displayed'], ['delivery', 'Source'], ['duration', 'Load / TTFB'], ['density', 'Bytes / displayed MP'], ['srcset', 'srcset']]) {
           const row = document.createElement('span');
           row.className = 'row';
           const name = document.createElement('span');
@@ -121,7 +121,8 @@
       entry.subtype.textContent = slash >= 0 ? mime.slice(slash + 1) : mime;
       entry.encoding.textContent = result?.contentEncoding ? `${mime ? ' + ' : ''}${result.contentEncoding}` : '';
       entry.mimeLine.hidden = !mime && !result?.contentEncoding;
-      const pixels = img.naturalWidth * img.naturalHeight;
+      const rect = img.getBoundingClientRect();
+      const pixels = rect.width * rect.height;
       const density = pixels > 0 && result?.bytes != null ? result.bytes * 1e6 / pixels : null;
       const heavy = density !== null && density > 1e6;
       if (heavy) entry.host.dataset.heavy = '';
@@ -135,16 +136,15 @@
       const hasSrcset = !!img.srcset?.trim() || [...(img.closest('picture')?.querySelectorAll('source[srcset]') || [])].some(source => source.getAttribute('srcset')?.trim());
       entry.rows.srcset.row.hidden = !hasSrcset;
       entry.rows.srcset.value.textContent = 'YES';
-      entry.note.textContent = heavy ? 'Above 1 MB/MP of resource bytes. A heuristic; small icons and animated images can score high.' : result ? '' : 'Enable monitoring, then reload to capture this image.';
+      entry.note.textContent = heavy ? 'Above 1 MB per displayed MP of resource bytes. A heuristic; small icons and animated images can score high.' : result ? '' : 'Enable monitoring, then reload to capture this image.';
       entry.note.hidden = !entry.note.textContent;
       if ('expanded' in entry.host.dataset) {
-        const rect = img.getBoundingClientRect();
         const panelWidth = entry.host.getBoundingClientRect().width;
         entry.host.style.setProperty('margin-left', `${Math.max(0, panelWidth + 6 - rect.right) - 2}px`, 'important');
         entry.rows.intrinsic.value.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
         entry.rows.displayed.value.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)}`;
       }
-      entry.host.setAttribute('aria-label', `Image file size ${entry.size.textContent}${heavy ? ', high bytes per megapixel' : ''}. Focus for details.`);
+      entry.host.setAttribute('aria-label', `Image file size ${entry.size.textContent}${heavy ? ', high bytes per displayed megapixel' : ''}. Focus for details.`);
       const visible = img.naturalWidth > 0;
       entry.host.style.setProperty('display', visible ? 'block' : 'none', 'important');
       // z-index cannot escape an ancestor stacking context; the top layer can.
