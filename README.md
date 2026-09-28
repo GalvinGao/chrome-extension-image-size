@@ -74,3 +74,9 @@ Monitoring starts only when you turn it on for a tab. The debugger permission le
 Run `npm test` and `npm run check`. No dependencies to install.
 
 Optional browser test: `CHROME_BIN=/path/to/chromium node tests/browser.mjs`.
+
+## Chrome Web Store distribution
+
+Run `npm run package` to create a store-ready ZIP in `dist/`. Only extension runtime files and icons are included; the ZIP contains `manifest.json` at its root.
+
+See the [publishing guide](docs/store/publishing.md) for first-time submission, GitHub Actions updates using Chrome Web Store API v2, and credential reuse. The [store listing](docs/store/listing.md) contains the description, permission explanations, and reviewer instructions. Read the [privacy policy](PRIVACY.md) for the extension's local data handling.

@@ -1,0 +1,9 @@
+/dist/
+/node_modules/
+gha-creds-*.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
