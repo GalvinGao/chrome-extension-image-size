@@ -59,7 +59,7 @@ Display image file sizes and related image-loading measurements directly on the 
 
 ## Data handling declaration
 
-Review the dashboard's current wording against `PRIVACY.md`. The extension handles **web history / resource URLs** and **website content / image resources** locally for its single purpose; do not claim it never accesses website data simply because there is no server upload.
+Review the dashboard's current wording against `PRIVACY.md`. The extension handles **web history / resource URLs**, **website content / image resources**, and **user activity in the form of image network monitoring** locally for its single purpose. It does not record clicks, scrolling, keystrokes, or form entries. Do not claim it never accesses website data simply because there is no server upload.
 
 The extension has no remote executable code, external service, advertising, analytics, sign-in, purchase, or paid feature. Measurements are held in memory; only display preferences persist. See the policy for the full data flow and retention behavior.
 

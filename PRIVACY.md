@@ -10,6 +10,8 @@ The extension installs a content script on HTTP and HTTPS pages so that it can d
 
 While a tab is monitored, the extension uses Chrome's debugger API to observe the tab's existing network requests, including requests from frames. Network events can include request URLs and response metadata. The extension temporarily tracks requests and filters the results to images. For images, it uses information such as URLs, response headers, MIME types, byte counts, cache source, and timing. When necessary, it reads an image's existing response body from Chrome's buffer to calculate its size. It does not download the image a second time.
 
+The network monitoring disclosed as user activity concerns image requests on a monitored tab. The extension does not record clicks, scrolling, keystrokes, or form entries from the page.
+
 The content script reads image elements and their source URLs, dimensions, and srcset attributes to position the labels and show details. URLs and website resources may contain personal information; the extension uses this information only to provide the measurements you requested. It does not use it to build a browsing profile.
 
 ## Storage and retention
@@ -30,4 +32,4 @@ Turn **Monitor this tab** off to stop observing new requests and remove the labe
 
 ## Questions and updates
 
-Please report questions through the [project's issue tracker](https://github.com/GalvinGao/chrome-extension-image-size/issues). Do not include private URLs, credentials, or sensitive images in a public issue. Material changes to data handling will be reflected in this policy and the store listing.
+Please report questions through the [publisher's issue tracker](https://github.com/yusixian/chrome-extension-image-size/issues). Do not include private URLs, credentials, or sensitive images in a public issue. Material changes to data handling will be reflected in this policy and the store listing.
